@@ -12,6 +12,7 @@ import {
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   type FormEvent,
   type ReactNode,
@@ -20,7 +21,6 @@ import axiosClient from "../../API/axiosClient";
 import { useAuth } from "../../context/AuthContext";
 import {
   getAcademicYears,
-  getActiveAcademicYear,
   getClassSections,
   getFeePayments,
   getStandards,
@@ -50,6 +50,8 @@ const genders = ["Male", "Female", "Other"];
 const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
 type StatusFilter = "all" | "active" | "inactive";
+type StandardWithDisplayOrder = Standard & { displayOrder?: number };
+type ActiveClassSection = ClassSection & { active?: boolean };
 
 type StudentAdmissionRecord = {
   id?: number;
@@ -100,8 +102,11 @@ export function StudentsPage() {
   const [status, setStatus] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
   const [isLoadingStandards, setIsLoadingStandards] = useState(true);
+  const [isLoadingAcademicYears, setIsLoadingAcademicYears] = useState(true);
   const [isLoadingSections, setIsLoadingSections] = useState(false);
   const [isLoadingStudents, setIsLoadingStudents] = useState(false);
+  const [sectionsLoadFailed, setSectionsLoadFailed] = useState(false);
+  const [studentsLoadFailed, setStudentsLoadFailed] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -114,12 +119,16 @@ export function StudentsPage() {
   const [deleteTarget, setDeleteTarget] = useState<StudentResponse | null>(
     null,
   );
+  const sectionsRequestId = useRef(0);
+  const studentsRequestId = useRef(0);
 
   const canManage = user?.role === "ADMIN" || user?.role === "PRINCIPAL";
   const selectedStandard =
     standards.find((standard) => standard.id === selectedStandardId) ?? null;
   const selectedAcademicYear =
     academicYears.find((year) => year.id === academicYearId) ?? null;
+  const selectedSection =
+    sections.find((section) => section.id === selectedClassSectionId) ?? null;
 
   const normalizedSearch = search.trim().toLowerCase();
   const filteredStudents = useMemo(() => {
@@ -154,42 +163,57 @@ export function StudentsPage() {
   }, [page, totalPages]);
 
   async function loadAcademicData() {
+    setIsLoadingAcademicYears(true);
     setIsLoadingStandards(true);
     setError("");
-    try {
-      const [yearsResponse, standardsResponse, activeYearResponse] =
-        await Promise.all([
-          getAcademicYears(),
-          getStandards(),
-          getActiveAcademicYear().catch(() => ({ data: null })),
-        ]);
+    const [yearsResult, standardsResult] = await Promise.allSettled([
+      getAcademicYears(),
+      getStandards(),
+    ]);
+    const failures: string[] = [];
+    let nextAcademicYearId = academicYearId;
 
-      const years = normalizeList<AcademicYear>(yearsResponse.data);
-      const nextStandards = normalizeList<Standard>(standardsResponse.data);
+    if (yearsResult.status === "fulfilled") {
+      const years = normalizeList<AcademicYear>(yearsResult.value.data);
       setAcademicYears(years);
-      setStandards(nextStandards);
+      const selectedYear = years.find((year) => year.id === academicYearId);
+      const activeYear = years.find((year) => year.active);
+      nextAcademicYearId = (selectedYear ?? activeYear ?? years[0])?.id ?? null;
+      setAcademicYearId(nextAcademicYearId);
+    } else {
+      failures.push("Unable to load academic years.");
+    }
 
-      const activeYear =
-        (activeYearResponse &&
-          (activeYearResponse as { data?: AcademicYear | null }).data) ??
-        years.find((year) => year.active) ??
-        years[0] ??
-        null;
-
-      if (activeYear) {
-        setAcademicYearId(activeYear.id);
-      } else {
-        setAcademicYearId(null);
-      }
-    } catch (loadError) {
-      setError(
-        getErrorMessage(
-          loadError,
-          "Unable to load academic years and standards.",
-        ),
+    let hasSelectedStandard = selectedStandardId !== null;
+    if (standardsResult.status === "fulfilled") {
+      const nextStandards = sortStandards(
+        normalizeList<StandardWithDisplayOrder>(standardsResult.value.data),
       );
-    } finally {
-      setIsLoadingStandards(false);
+      setStandards(nextStandards);
+      hasSelectedStandard = nextStandards.some(
+        (standard) => standard.id === selectedStandardId,
+      );
+      if (!hasSelectedStandard) {
+        setSelectedStandardId(null);
+        setSelectedClassSectionId(null);
+        setSections([]);
+        setStudents([]);
+      }
+    } else {
+      failures.push("Unable to load standards.");
+    }
+
+    setError(failures.join(" "));
+    setIsLoadingAcademicYears(false);
+    setIsLoadingStandards(false);
+
+    if (
+      failures.length === 0 &&
+      nextAcademicYearId &&
+      selectedStandardId !== null &&
+      hasSelectedStandard
+    ) {
+      await loadSectionsForStandard(selectedStandardId, nextAcademicYearId);
     }
   }
 
@@ -197,54 +221,77 @@ export function StudentsPage() {
     void loadAcademicData();
   }, []);
 
-  useEffect(() => {
-    if (!academicYearId || !selectedStandardId) {
-      setSections([]);
-      return;
-    }
-    void loadSectionsForStandard(selectedStandardId, academicYearId);
-  }, [academicYearId, selectedStandardId]);
-
   async function loadSectionsForStandard(standardId: number, yearId: number) {
+    const requestId = ++sectionsRequestId.current;
     setIsLoadingSections(true);
+    setSectionsLoadFailed(false);
     setError("");
+    setSections([]);
     try {
       const response = await getClassSections(yearId, standardId);
-      const nextSections = normalizeList<ClassSection>(response.data);
+      if (requestId !== sectionsRequestId.current) return;
+      const nextSections = normalizeList<ActiveClassSection>(response.data)
+        .filter((section) => section.active !== false);
       setSections(nextSections);
-      setSelectedClassSectionId(null);
-      setStudents([]);
-      setSearch("");
-      setStatus("all");
-      setPage(1);
+      if (
+        selectedClassSectionId !== null &&
+        nextSections.some((section) => section.id === selectedClassSectionId)
+      ) {
+        await loadStudentsForSection(selectedClassSectionId);
+      } else {
+        ++studentsRequestId.current;
+        setSelectedClassSectionId(null);
+        setStudents([]);
+        setIsLoadingStudents(false);
+        setStudentsLoadFailed(false);
+        setSearch("");
+        setStatus("all");
+        setPage(1);
+      }
     } catch (loadError) {
+      if (requestId !== sectionsRequestId.current) return;
       setSections([]);
+      setSelectedClassSectionId(null);
+      ++studentsRequestId.current;
+      setStudents([]);
+      setIsLoadingStudents(false);
+      setSectionsLoadFailed(true);
       setError(
         getErrorMessage(
           loadError,
-          "Unable to load sections for this standard.",
+          "Unable to load sections. Please try again.",
         ),
       );
     } finally {
-      setIsLoadingSections(false);
+      if (requestId === sectionsRequestId.current) {
+        setIsLoadingSections(false);
+      }
     }
   }
 
   async function loadStudentsForSection(classSectionId: number) {
+    const requestId = ++studentsRequestId.current;
     setIsLoadingStudents(true);
+    setStudentsLoadFailed(false);
     setError("");
     setNotice("");
+    setStudents([]);
     try {
       const response = await getStudentsByClassSection(classSectionId);
+      if (requestId !== studentsRequestId.current) return;
       setStudents(normalizeList<StudentResponse>(response.data));
-      setPage(1);
     } catch (loadError) {
+      if (requestId !== studentsRequestId.current) return;
       setStudents([]);
+      setStudentsLoadFailed(true);
       setError(
-        getErrorMessage(loadError, "Unable to load students for this section."),
+        getErrorMessage(loadError, "Unable to load students. Please try again."),
       );
     } finally {
-      setIsLoadingStudents(false);
+      if (requestId === studentsRequestId.current) {
+        setIsLoadingStudents(false);
+        setPage(1);
+      }
     }
   }
 
@@ -361,13 +408,20 @@ export function StudentsPage() {
   }
 
   function handleStandardSelect(standard: Standard) {
+    ++sectionsRequestId.current;
+    ++studentsRequestId.current;
     setSelectedStandardId(standard.id);
     setSelectedClassSectionId(null);
+    setSections([]);
+    setSectionsLoadFailed(false);
     setStudents([]);
+    setIsLoadingSections(false);
+    setIsLoadingStudents(false);
+    setStudentsLoadFailed(false);
     setSearch("");
     setStatus("all");
     setPage(1);
-    if (academicYearId) {
+    if (academicYearId !== null) {
       void loadSectionsForStandard(standard.id, academicYearId);
     }
   }
@@ -375,6 +429,7 @@ export function StudentsPage() {
   function handleSectionSelect(section: ClassSection) {
     setSelectedClassSectionId(section.id);
     setStudents([]);
+    setStudentsLoadFailed(false);
     setSearch("");
     setStatus("all");
     setPage(1);
@@ -437,6 +492,7 @@ export function StudentsPage() {
           </div>
           <button
             className="refresh-link refresh-button"
+            disabled={isLoadingAcademicYears || isLoadingStandards}
             onClick={() => void loadAcademicData()}
             type="button"
           >
@@ -444,11 +500,13 @@ export function StudentsPage() {
           </button>
         </div>
 
-        {isLoadingStandards ? (
-          <p className="empty-state">Loading standards...</p>
+        {isLoadingStandards || isLoadingAcademicYears ? (
+          <p className="empty-state">
+            {isLoadingAcademicYears ? "Loading academic years..." : "Loading standards..."}
+          </p>
         ) : (
           <div className="student-standard-grid">
-            {standards.slice(0, 10).map((standard) => (
+            {standards.map((standard) => (
               <button
                 key={standard.id}
                 className={
@@ -457,6 +515,7 @@ export function StudentsPage() {
                     : "student-standard-card"
                 }
                 onClick={() => handleStandardSelect(standard)}
+                disabled={academicYearId === null || isLoadingAcademicYears}
                 type="button"
               >
                 <span className="student-standard-card-number">
@@ -475,12 +534,15 @@ export function StudentsPage() {
         {selectedStandardId !== null && (
           <>
             <div className="student-selection-title">
-              <h3>{selectedStandard?.standardName ?? "Standard"} Standard</h3>
+              <h3>
+                {selectedStandard?.standardName ?? "Standard"} Standard
+                {selectedSection ? ` - ${selectedSection.sectionName}` : ""}
+              </h3>
             </div>
 
             {isLoadingSections ? (
               <p className="empty-state">Loading sections...</p>
-            ) : sections.length === 0 ? (
+            ) : sectionsLoadFailed ? null : sections.length === 0 ? (
               <p className="empty-state">
                 No sections available for this standard.
               </p>
@@ -535,8 +597,12 @@ export function StudentsPage() {
 
             {isLoadingStudents ? (
               <p className="empty-state">Loading students...</p>
-            ) : filteredStudents.length === 0 ? (
-              <p className="empty-state">No students found in this section.</p>
+            ) : studentsLoadFailed ? null : filteredStudents.length === 0 ? (
+              <p className="empty-state">
+                {students.length === 0
+                  ? "No students found for this section."
+                  : "No students match the selected filters."}
+              </p>
             ) : (
               <>
                 <StudentTable
@@ -1411,6 +1477,15 @@ function formatDate(value: string) {
 
 function normalizeList<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function sortStandards(standards: StandardWithDisplayOrder[]) {
+  if (!standards.every((standard) => typeof standard.displayOrder === "number")) {
+    return standards;
+  }
+  return [...standards].sort(
+    (first, second) => first.displayOrder! - second.displayOrder!,
+  );
 }
 
 function getErrorMessage(error: unknown, fallback: string) {

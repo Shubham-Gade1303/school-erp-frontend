@@ -27,6 +27,7 @@ import { useAuth } from "./context/AuthContext";
 import { TeachersPage } from "./pages/admin/Teachers";
 import { StudentsPage } from "./pages/admin/Students";
 import { AdmissionPage } from "./pages/admin/AdmissionPage";
+import { AttendancePage } from "./pages/AttendancePage";
 import type { DashboardData, UserRole } from "./types/api";
 import "./App.css";
 
@@ -49,7 +50,7 @@ function App() {
             <Route path="teachers" element={<TeachersPage />} />
             <Route path="classes" element={<FeaturePage title="Classes" />} />
             <Route path="subjects" element={<FeaturePage title="Subjects" />} />
-            <Route path="attendance" element={<FeaturePage title="Attendance" />} />
+            <Route path="attendance" element={<AttendancePage />} />
             <Route path="exams" element={<FeaturePage title="Exams" />} />
             <Route path="results" element={<FeaturePage title="Results" />} />
             <Route path="fees" element={<FeaturePage title="Fees" />} />
@@ -66,7 +67,7 @@ function App() {
             <Route path="teachers" element={<FeaturePage title="Teachers" />} />
             <Route path="classes" element={<FeaturePage title="Classes" />} />
             <Route path="subjects" element={<FeaturePage title="Subjects" />} />
-            <Route path="attendance" element={<FeaturePage title="Attendance" />} />
+            <Route path="attendance" element={<AttendancePage />} />
             <Route path="exams" element={<FeaturePage title="Exams" />} />
             <Route path="results" element={<FeaturePage title="Results" />} />
             <Route path="reports" element={<FeaturePage title="Reports" />} />
@@ -78,7 +79,7 @@ function App() {
             <Route path="dashboard" element={<DashboardScreen />} />
             <Route path="classes" element={<TeacherFeatureRoute title="My Classes" />} />
             <Route path="students" element={<StudentsPage />} />
-            <Route path="attendance" element={<TeacherFeatureRoute title="Mark Attendance" />} />
+            <Route path="attendance" element={<AttendancePage />} />
             <Route path="assignments" element={<TeacherFeatureRoute title="Assignments" />} />
             <Route path="exams" element={<TeacherFeatureRoute title="Exams" />} />
             <Route path="results" element={<TeacherFeatureRoute title="Results" />} />
@@ -217,99 +218,101 @@ function DashboardScreen() {
             ))}
           </div>
 
-          <div className="dashboard-main-grid">
-            <section className="panel dashboard-panel attendance-panel">
-              <div className="panel-header dashboard-panel-header">
-                <h2>Attendance Overview</h2>
-                <button className="dashboard-filter-button" type="button">
-                  This Week
-                </button>
-              </div>
+          <div className="dashboard-columns">
+            <div className="dashboard-column">
+              <section className="panel dashboard-panel attendance-panel">
+                <div className="panel-header dashboard-panel-header">
+                  <h2>Attendance Overview</h2>
+                  <button className="dashboard-filter-button" type="button">
+                    This Week
+                  </button>
+                </div>
 
-              <div className="attendance-chart" aria-label="Attendance overview chart">
-                {attendanceData.map((item) => (
-                  <div className="attendance-column" key={item.label}>
-                    <div className="attendance-bar-wrap">
-                      <span className="attendance-bar" style={{ height: `${item.value}%` }} />
-                    </div>
-                    <small>{item.label}</small>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="panel dashboard-panel schedule-panel">
-              <div className="panel-header dashboard-panel-header">
-                <h2>Today's Schedule</h2>
-                <button className="dashboard-link-button" type="button">
-                  View All
-                </button>
-              </div>
-
-              <div className="schedule-list" role="list">
-                {scheduleData.map((item) => (
-                  <div className={`schedule-item ${item.tone}`} key={`${item.time}-${item.title}`} role="listitem">
-                    <time>{item.time}</time>
-                    <div className="schedule-item-body">
-                      <div className="schedule-item-icon" aria-hidden="true">
-                        <CalendarDays size={15} />
+                <div className="attendance-chart" aria-label="Attendance overview chart">
+                  {attendanceData.map((item) => (
+                    <div className="attendance-column" key={item.label}>
+                      <div className="attendance-bar-wrap">
+                        <span className="attendance-bar" style={{ height: `${item.value}%` }} />
                       </div>
-                      <div>
-                        <strong>{item.title}</strong>
-                        <small>{item.detail}</small>
+                      <small>{item.label}</small>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="panel dashboard-panel fee-panel">
+                <div className="panel-header dashboard-panel-header">
+                  <h2>Fee Collection - Month Wise</h2>
+                  <button className="dashboard-filter-button" type="button">
+                    This Month
+                  </button>
+                </div>
+
+                <div className="fee-chart">
+                  {feeCollection.map((item) => (
+                    <div className="fee-row" key={item.label}>
+                      <div className="fee-label-row">
+                        <span>{item.label}</span>
+                      </div>
+                      <div className="fee-track">
+                        <span style={{ width: `${item.value}%` }} />
+                      </div>
+                      <strong>{item.value}%</strong>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+
+            <div className="dashboard-column">
+              <section className="panel dashboard-panel schedule-panel">
+                <div className="panel-header dashboard-panel-header">
+                  <h2>Today's Schedule</h2>
+                  <button className="dashboard-link-button" type="button">
+                    View All
+                  </button>
+                </div>
+
+                <div className="schedule-list" role="list">
+                  {scheduleData.map((item) => (
+                    <div className={`schedule-item ${item.tone}`} key={`${item.time}-${item.title}`} role="listitem">
+                      <time>{item.time}</time>
+                      <div className="schedule-item-body">
+                        <div className="schedule-item-icon" aria-hidden="true">
+                          <CalendarDays size={15} />
+                        </div>
+                        <div>
+                          <strong>{item.title}</strong>
+                          <small>{item.detail}</small>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
+                  ))}
+                </div>
+              </section>
 
-          <div className="dashboard-main-grid secondary-grid">
-            <section className="panel dashboard-panel fee-panel">
-              <div className="panel-header dashboard-panel-header">
-                <h2>Fee Collection - Month Wise</h2>
-                <button className="dashboard-filter-button" type="button">
-                  This Month
-                </button>
-              </div>
+              <section className="panel dashboard-panel insight-panel">
+                <div className="panel-header dashboard-panel-header">
+                  <h2>Top Performers</h2>
+                  <button className="dashboard-link-button" type="button">
+                    View Full Report
+                  </button>
+                </div>
 
-              <div className="fee-chart">
-                {feeCollection.map((item) => (
-                  <div className="fee-row" key={item.label}>
-                    <div className="fee-label-row">
-                      <span>{item.label}</span>
+                <div className="performer-list">
+                  {topPerformers.map((item) => (
+                    <div className="performer-item" key={item.name}>
+                      <div className="performer-avatar" aria-hidden="true">{item.name.slice(0, 2).toUpperCase()}</div>
+                      <div className="performer-copy">
+                        <strong>{item.name}</strong>
+                        <small>{item.badge}</small>
+                      </div>
+                      <span>{item.score}</span>
                     </div>
-                    <div className="fee-track">
-                      <span style={{ width: `${item.value}%` }} />
-                    </div>
-                    <strong>{item.value}%</strong>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="panel dashboard-panel insight-panel">
-              <div className="panel-header dashboard-panel-header">
-                <h2>Top Performers</h2>
-                <button className="dashboard-link-button" type="button">
-                  View Full Report
-                </button>
-              </div>
-
-              <div className="performer-list">
-                {topPerformers.map((item) => (
-                  <div className="performer-item" key={item.name}>
-                    <div className="performer-avatar" aria-hidden="true">{item.name.slice(0, 2).toUpperCase()}</div>
-                    <div className="performer-copy">
-                      <strong>{item.name}</strong>
-                      <small>{item.badge}</small>
-                    </div>
-                    <span>{item.score}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
+                  ))}
+                </div>
+              </section>
+            </div>
           </div>
         </div>
       )}
