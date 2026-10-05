@@ -1,5 +1,5 @@
 export interface StudentRequest {
-  admissionNumber: string;
+  admissionNumber?: string;
   firstName: string;
   middleName?: string;
   lastName: string;

@@ -28,6 +28,8 @@ const navigationByRole: Record<UserRole, NavigationItem[]> = {
   ADMIN: ([
     ["Dashboard", "dashboard", LayoutDashboard],
     ["Admission", "admission", UserPlus],
+    ["Academic Years", "academic-years", CalendarDays],
+    ["Timetable", "timetable", CalendarDays],
     ["Students", "students", UsersRound],
     ["Teachers", "teachers", UsersRound],
     ["Classes", "classes", BookOpen],
@@ -43,6 +45,7 @@ const navigationByRole: Record<UserRole, NavigationItem[]> = {
   ] as const).map(([label, path, icon]) => ({ label, path: `/admin/${path}`, icon })),
   PRINCIPAL: ([
     ["Dashboard", "dashboard", LayoutDashboard],
+    ["Timetable", "timetable", CalendarDays],
     ["Students", "students", UsersRound],
     ["Teachers", "teachers", UsersRound],
     ["Classes", "classes", BookOpen],
@@ -55,6 +58,7 @@ const navigationByRole: Record<UserRole, NavigationItem[]> = {
   ] as const).map(([label, path, icon]) => ({ label, path: `/principal/${path}`, icon })),
   TEACHER: ([
     ["Dashboard", "dashboard", LayoutDashboard],
+    ["Timetable", "timetable", CalendarDays],
     ["My Classes", "classes", BookOpen],
     ["My Students", "students", UsersRound],
     ["Attendance", "attendance", CalendarDays],

@@ -229,4 +229,4 @@ const roleDashboardData: Record<UserRole, DashboardData> = {
 
 export function getDashboardMockData(role: UserRole): DashboardData {
   return roleDashboardData[role];
-}
+};

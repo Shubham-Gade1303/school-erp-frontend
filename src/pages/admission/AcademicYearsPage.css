@@ -1,0 +1,339 @@
+.academic-years-page {
+  --academic-purple: #6b5ce7;
+  --academic-ink: #302d3c;
+  --academic-muted: #777382;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 0 28px;
+  color: var(--academic-ink);
+  font-size: 13px;
+}
+
+.academic-years-page *,
+.academic-years-page *::before,
+.academic-years-page *::after {
+  box-sizing: border-box;
+}
+
+.academic-years-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.academic-years-heading h1 {
+  margin: 0 0 5px;
+  font-size: 26px;
+}
+
+.academic-years-heading p {
+  margin: 0;
+  color: var(--academic-muted);
+  font-size: 13px;
+}
+
+.academic-eyebrow {
+  margin-bottom: 5px !important;
+  color: var(--academic-purple) !important;
+  font-size: 12px !important;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.academic-years-card {
+  padding: 22px;
+  background: #fff;
+  border: 1px solid #e8e5ef;
+  border-radius: 8px;
+  box-shadow: 0 3px 14px #302d3c0a;
+}
+
+.academic-years-card-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 18px;
+  color: var(--academic-purple);
+}
+
+.academic-years-card-title h2 {
+  margin: 0;
+  color: var(--academic-ink);
+  font-size: 17px;
+}
+
+.academic-years-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e8e5ef;
+  border-radius: 6px;
+}
+
+.academic-years-table-wrap table {
+  width: 100%;
+  min-width: 650px;
+  border-collapse: collapse;
+}
+
+.academic-years-table-wrap th,
+.academic-years-table-wrap td {
+  padding: 12px;
+  color: #514e5b;
+  border-bottom: 1px solid #efedf3;
+  font-size: 13px;
+  text-align: left;
+}
+
+.academic-years-table-wrap th {
+  color: #716d7a;
+  background: #f8f7fc;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.academic-years-table-wrap tr:last-child td {
+  border-bottom: 0;
+}
+
+.year-status {
+  display: inline-flex;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.year-status.active {
+  color: #287347;
+  background: #eaf7ee;
+}
+
+.year-status.inactive {
+  color: #a04450;
+  background: #fff0f1;
+}
+
+.academic-year-actions {
+  display: flex;
+  gap: 13px;
+}
+
+.academic-text-button {
+  padding: 3px 0;
+  color: #5143c7;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.danger-text {
+  color: #b53f50 !important;
+}
+
+.academic-years-empty {
+  padding: 22px 0;
+  color: var(--academic-muted);
+  font-size: 13px;
+}
+
+.academic-years-notice,
+.academic-years-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 11px 13px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.academic-years-notice {
+  color: #287347;
+  background: #edf8f0;
+  border: 1px solid #cee8d5;
+}
+
+.academic-years-error {
+  color: #a23549;
+  background: #fff2f2;
+  border: 1px solid #f0c8ce;
+}
+
+.academic-years-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.academic-primary-button,
+.academic-secondary-button,
+.academic-delete-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.academic-primary-button {
+  color: #fff;
+  background: var(--academic-purple);
+}
+
+.academic-secondary-button {
+  color: #5449c5;
+  background: #fff;
+  border-color: #d9d4f3;
+}
+
+.academic-delete-button {
+  color: #fff;
+  background: #b53f50;
+}
+
+.academic-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: #1d19345c;
+}
+
+.academic-dialog-card {
+  width: min(100%, 560px);
+  padding: 22px;
+  background: #fff;
+  border: 1px solid #e8e5ef;
+  border-radius: 9px;
+  box-shadow: 0 18px 55px #17132730;
+}
+
+.academic-dialog-card.compact-dialog {
+  width: min(100%, 440px);
+}
+
+.academic-dialog-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.academic-dialog-heading p {
+  margin: 0 0 4px;
+  color: var(--academic-purple);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.academic-dialog-heading h2 {
+  margin: 0;
+  color: var(--academic-ink);
+  font-size: 20px;
+}
+
+.academic-dialog-heading > button {
+  width: 34px;
+  height: 34px;
+  color: #6c6875;
+  background: #f8f7fc;
+  border: 1px solid #e8e5ef;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.academic-year-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.academic-year-field {
+  display: grid;
+  gap: 6px;
+  color: #494553;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.academic-year-field:first-child {
+  grid-column: 1 / -1;
+}
+
+.academic-year-field input {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  color: var(--academic-ink);
+  background: #fcfbff;
+  border: 1px solid #dcd9e5;
+  border-radius: 6px;
+  font: inherit;
+}
+
+.academic-year-field small {
+  color: #b53f50;
+  font-size: 12px;
+}
+
+.academic-year-active {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 16px;
+  font-size: 13px;
+}
+
+.academic-year-active input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--academic-purple);
+}
+
+.academic-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 20px;
+}
+
+.academic-dialog-copy {
+  color: var(--academic-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.academic-years-page :focus-visible {
+  outline: 2px solid var(--academic-purple);
+  outline-offset: 2px;
+}
+
+@media (max-width: 650px) {
+  .academic-years-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .academic-year-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .academic-year-field:first-child {
+    grid-column: auto;
+  }
+}

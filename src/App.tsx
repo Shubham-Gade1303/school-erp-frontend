@@ -26,9 +26,13 @@ import { AppLayout } from "./components/layout/AppLayout";
 import { useAuth } from "./context/AuthContext";
 import { TeachersPage } from "./pages/admin/Teachers";
 import { StudentsPage } from "./pages/admin/Students";
-import { AdmissionPage } from "./pages/admin/AdmissionPage";
+import { AdmissionPage } from "./pages/admission/AdmissionPage";
+import { AcademicYearsPage } from "./pages/admission/AcademicYearsPage";
 import { AttendancePage } from "./pages/AttendancePage";
 import type { DashboardData, UserRole } from "./types/api";
+import { getAttendanceByDate } from "./services/attendanceService";
+import { getAllStudents } from "./services/studentService";
+import type { AttendanceRecord } from "./types/attendance";
 import "./App.css";
 
 const roleRoutes: Record<UserRole, string> = {
@@ -36,6 +40,20 @@ const roleRoutes: Record<UserRole, string> = {
   PRINCIPAL: "/principal/dashboard",
   TEACHER: "/teacher/dashboard",
 };
+
+type AttendanceOverviewState =
+  | { status: "loading" }
+  | { status: "error"; message: string }
+  | {
+      status: "loaded";
+      date: string;
+      totalActive: number;
+      present: number;
+      absent: number;
+      notMarked: number;
+      rate: number | null;
+      isEmpty: boolean;
+    };
 
 function App() {
   return (
@@ -45,7 +63,9 @@ function App() {
         <Route path="/admin" element={<RoleRoute role="ADMIN" />}>
           <Route element={<AppLayout />}>
             <Route path="dashboard" element={<DashboardScreen />} />
+            <Route path="timetable" element={<FeaturePage title="Timetable" />} />
             <Route path="admission" element={<AdmissionPage />} />
+            <Route path="academic-years" element={<AcademicYearsPage />} />
             <Route path="students" element={<StudentsPage />} />
             <Route path="teachers" element={<TeachersPage />} />
             <Route path="classes" element={<FeaturePage title="Classes" />} />
@@ -63,6 +83,7 @@ function App() {
         <Route path="/principal" element={<RoleRoute role="PRINCIPAL" />}>
           <Route element={<AppLayout />}>
             <Route path="dashboard" element={<DashboardScreen />} />
+            <Route path="timetable" element={<FeaturePage title="Timetable" />} />
             <Route path="students" element={<StudentsPage />} />
             <Route path="teachers" element={<FeaturePage title="Teachers" />} />
             <Route path="classes" element={<FeaturePage title="Classes" />} />
@@ -77,6 +98,7 @@ function App() {
         <Route path="/teacher" element={<RoleRoute role="TEACHER" />}>
           <Route element={<AppLayout />}>
             <Route path="dashboard" element={<DashboardScreen />} />
+            <Route path="timetable" element={<FeaturePage title="Timetable" />} />
             <Route path="classes" element={<TeacherFeatureRoute title="My Classes" />} />
             <Route path="students" element={<StudentsPage />} />
             <Route path="attendance" element={<AttendancePage />} />
@@ -134,6 +156,8 @@ function DashboardScreen() {
   const { user, accessDeniedMessage, clearAccessDenied } = useAuth();
   const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [attendanceOverview, setAttendanceOverview] =
+    useState<AttendanceOverviewState>({ status: "loading" });
   const role = user?.role;
 
   useEffect(() => {
@@ -147,17 +171,57 @@ function DashboardScreen() {
     };
   }, [role]);
 
-  if (!user || !role || (role !== "TEACHER" && !dashboardData)) return null;
+  useEffect(() => {
+    if (!role || role === "TEACHER") return;
+    let isCurrent = true;
+    const date = getLocalDateString();
 
-  const attendanceData = [
-    { label: "Mon", value: 85 },
-    { label: "Tue", value: 90 },
-    { label: "Wed", value: 92 },
-    { label: "Thu", value: 88 },
-    { label: "Fri", value: 95 },
-    { label: "Sat", value: 76 },
-    { label: "Sun", value: 80 },
-  ];
+    setAttendanceOverview({ status: "loading" });
+    Promise.allSettled([getAttendanceByDate(date), getAllStudents()]).then(
+      ([attendanceResult, studentsResult]) => {
+        if (!isCurrent) return;
+        if (attendanceResult.status === "rejected") {
+          setAttendanceOverview({
+            status: "error",
+            message: "Unable to load today's attendance.",
+          });
+          return;
+        }
+        if (studentsResult.status === "rejected") {
+          setAttendanceOverview({
+            status: "error",
+            message: "Unable to load today's active student count.",
+          });
+          return;
+        }
+
+        const records = attendanceResult.value.data;
+        const totalActive = studentsResult.value.data.filter(
+          (student) => student.active === true,
+        ).length;
+        const present = countAttendanceStatus(records, "PRESENT");
+        const absent = countAttendanceStatus(records, "ABSENT");
+        const notMarked = Math.max(0, totalActive - present - absent);
+
+        setAttendanceOverview({
+          status: "loaded",
+          date,
+          totalActive,
+          present,
+          absent,
+          notMarked,
+          rate: totalActive > 0 ? Math.round((present / totalActive) * 1000) / 10 : null,
+          isEmpty: records.length === 0,
+        });
+      },
+    );
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [role]);
+
+  if (!user || !role || (role !== "TEACHER" && !dashboardData)) return null;
 
   const scheduleData = [
     { time: "08:00 AM", title: "Mathematics", detail: "Class 10 • Room 101", tone: "primary" },
@@ -206,114 +270,149 @@ function DashboardScreen() {
             </div>
           </header>
 
-          <div className="stats-grid dashboard-summary-grid">
-            {dashboardData?.stats.map((stat) => (
-              <StatCard
-                icon={getStatIcon(stat.icon)}
-                key={stat.label}
-                label={stat.label}
-                value={stat.value}
-                tone={stat.tone}
-              />
-            ))}
-          </div>
-
-          <div className="dashboard-columns">
-            <div className="dashboard-column">
-              <section className="panel dashboard-panel attendance-panel">
-                <div className="panel-header dashboard-panel-header">
-                  <h2>Attendance Overview</h2>
-                  <button className="dashboard-filter-button" type="button">
-                    This Week
-                  </button>
-                </div>
-
-                <div className="attendance-chart" aria-label="Attendance overview chart">
-                  {attendanceData.map((item) => (
-                    <div className="attendance-column" key={item.label}>
-                      <div className="attendance-bar-wrap">
-                        <span className="attendance-bar" style={{ height: `${item.value}%` }} />
-                      </div>
-                      <small>{item.label}</small>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              <section className="panel dashboard-panel fee-panel">
-                <div className="panel-header dashboard-panel-header">
-                  <h2>Fee Collection - Month Wise</h2>
-                  <button className="dashboard-filter-button" type="button">
-                    This Month
-                  </button>
-                </div>
-
-                <div className="fee-chart">
-                  {feeCollection.map((item) => (
-                    <div className="fee-row" key={item.label}>
-                      <div className="fee-label-row">
-                        <span>{item.label}</span>
-                      </div>
-                      <div className="fee-track">
-                        <span style={{ width: `${item.value}%` }} />
-                      </div>
-                      <strong>{item.value}%</strong>
-                    </div>
-                  ))}
-                </div>
-              </section>
+          <div className="dashboard-top-row">
+            <div className="stats-grid dashboard-summary-grid dashboard-stats-grid">
+              {dashboardData?.stats.map((stat) => (
+                <StatCard
+                  icon={getStatIcon(stat.icon)}
+                  key={stat.label}
+                  label={stat.label}
+                  value={stat.value}
+                  tone={stat.tone}
+                />
+              ))}
             </div>
 
-            <div className="dashboard-column">
-              <section className="panel dashboard-panel schedule-panel">
-                <div className="panel-header dashboard-panel-header">
-                  <h2>Today's Schedule</h2>
-                  <button className="dashboard-link-button" type="button">
-                    View All
-                  </button>
-                </div>
+            <section className="panel dashboard-panel dashboard-attendance attendance-panel">
+              <div className="panel-header dashboard-panel-header">
+                <h2>Attendance Overview</h2>
+                <button className="dashboard-filter-button" type="button">
+                  {attendanceOverview.status === "loaded" && attendanceOverview.rate !== null
+                    ? `Today · ${attendanceOverview.rate}%`
+                    : "Today"}
+                </button>
+              </div>
 
-                <div className="schedule-list" role="list">
-                  {scheduleData.map((item) => (
-                    <div className={`schedule-item ${item.tone}`} key={`${item.time}-${item.title}`} role="listitem">
-                      <time>{item.time}</time>
-                      <div className="schedule-item-body">
-                        <div className="schedule-item-icon" aria-hidden="true">
-                          <CalendarDays size={15} />
+              {attendanceOverview.status === "loading" ? (
+                <div className="attendance-chart" role="status">
+                  <p className="empty-state" style={{ margin: "auto" }}>
+                    Loading today's attendance...
+                  </p>
+                </div>
+              ) : attendanceOverview.status === "error" ? (
+                <div className="attendance-chart" role="alert">
+                  <p className="empty-state" style={{ margin: "auto" }}>
+                    {attendanceOverview.message}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {attendanceOverview.isEmpty && (
+                    <p className="empty-state" style={{ margin: "0 16px", padding: "0 0 8px" }}>
+                      No attendance marked today.
+                    </p>
+                  )}
+                  <div className="attendance-chart" aria-label="Today's student attendance">
+                    {[
+                      { label: "Present", value: attendanceOverview.present, color: "#1eb982" },
+                      { label: "Absent", value: attendanceOverview.absent, color: "#e35f79" },
+                      { label: "Not Marked", value: attendanceOverview.notMarked, color: "#8b98a9" },
+                    ].map((item) => (
+                      <div className="attendance-column" key={item.label}>
+                        <div className="attendance-bar-wrap">
+                          <span
+                            className="attendance-bar"
+                            style={{
+                              height: attendanceOverview.totalActive
+                                ? `${(item.value / attendanceOverview.totalActive) * 100}%`
+                                : "0%",
+                              minHeight: item.value ? undefined : 0,
+                              backgroundColor: item.color,
+                            }}
+                          />
                         </div>
-                        <div>
-                          <strong>{item.title}</strong>
-                          <small>{item.detail}</small>
-                        </div>
+                        <small>
+                          <strong>{item.value}</strong>
+                          <span>{item.label}</span>
+                        </small>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </section>
+
+            <section className="panel dashboard-panel dashboard-schedule schedule-panel">
+              <div className="panel-header dashboard-panel-header">
+                <h2>Today's Schedule</h2>
+                <button className="dashboard-link-button" type="button">
+                  View All
+                </button>
+              </div>
+
+              <div className="schedule-list" role="list">
+                {scheduleData.map((item) => (
+                  <div className={`schedule-item ${item.tone}`} key={`${item.time}-${item.title}`} role="listitem">
+                    <time>{item.time}</time>
+                    <div className="schedule-item-body">
+                      <div className="schedule-item-icon" aria-hidden="true">
+                        <CalendarDays size={15} />
+                      </div>
+                      <div>
+                        <strong>{item.title}</strong>
+                        <small>{item.detail}</small>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </section>
-
-              <section className="panel dashboard-panel insight-panel">
-                <div className="panel-header dashboard-panel-header">
-                  <h2>Top Performers</h2>
-                  <button className="dashboard-link-button" type="button">
-                    View Full Report
-                  </button>
-                </div>
-
-                <div className="performer-list">
-                  {topPerformers.map((item) => (
-                    <div className="performer-item" key={item.name}>
-                      <div className="performer-avatar" aria-hidden="true">{item.name.slice(0, 2).toUpperCase()}</div>
-                      <div className="performer-copy">
-                        <strong>{item.name}</strong>
-                        <small>{item.badge}</small>
-                      </div>
-                      <span>{item.score}</span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            </div>
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
+
+          <section className="panel dashboard-panel dashboard-fees fee-panel">
+            <div className="panel-header dashboard-panel-header">
+              <h2>Fee Collection - Month Wise</h2>
+              <button className="dashboard-filter-button" type="button">
+                This Month
+              </button>
+            </div>
+
+            <div className="fee-chart">
+              {feeCollection.map((item) => (
+                <div className="fee-row" key={item.label}>
+                  <div className="fee-label-row">
+                    <span>{item.label}</span>
+                  </div>
+                  <div className="fee-track">
+                    <span style={{ width: `${item.value}%` }} />
+                  </div>
+                  <strong>{item.value}%</strong>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="panel dashboard-panel dashboard-insights insight-panel">
+            <div className="panel-header dashboard-panel-header">
+              <h2>Top Performers</h2>
+              <button className="dashboard-link-button" type="button">
+                View Full Report
+              </button>
+            </div>
+
+            <div className="performer-list">
+              {topPerformers.map((item) => (
+                <div className="performer-item" key={item.name}>
+                  <div className="performer-avatar" aria-hidden="true">{item.name.slice(0, 2).toUpperCase()}</div>
+                  <div className="performer-copy">
+                    <strong>{item.name}</strong>
+                    <small>{item.badge}</small>
+                  </div>
+                  <span>{item.score}</span>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       )}
     </>
@@ -330,6 +429,21 @@ function getStatIcon(icon: string) {
     results: <BarChart3 />,
   };
   return icons[icon] ?? <BarChart3 />;
+}
+
+function getLocalDateString() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function countAttendanceStatus(records: AttendanceRecord[], status: string) {
+  const expectedStatus = status.toUpperCase();
+  return records.filter(
+    (record) => record.status.trim().toUpperCase() === expectedStatus,
+  ).length;
 }
 
 function LoginScreen() {

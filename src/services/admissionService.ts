@@ -40,6 +40,8 @@ export const createDocument = (data: DocumentRecord) =>
   axiosClient.post<DocumentRecord>("/documents", data);
 export const updateDocument = (id: number, data: DocumentRecord) =>
   axiosClient.put<DocumentRecord>(`/documents/${id}`, data);
+export const deleteDocument = (id: number) =>
+  axiosClient.delete<void>(`/documents/${id}`);
 export const getStudentFees = (studentId: number, academicYearId: number) =>
   axiosClient.get<StudentFee[]>(
     `/student-fees/student/${studentId}/academic-year/${academicYearId}`,
