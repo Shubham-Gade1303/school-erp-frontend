@@ -67,7 +67,13 @@ export function ReviewStep({
         ["Country", address.country],
       ] : [["Address", "-"]]} />
       <ReviewSection title="Documents" items={documents.length
-        ? documents.map((document) => [document.documentType, document.documentName])
+        ? documents.map((document) => [
+            document.documentName,
+            <span className="review-document-links" key={document.id ?? document.documentName}>
+              <span>{document.documentType}</span>
+              {document.documentUrl && <a href={document.documentUrl} rel="noopener noreferrer" target="_blank">View</a>}
+            </span>,
+          ])
         : [["Documents", "None added"]]} />
       <ReviewSection title="Fees" items={[
         ...fees.map((fee) => [fee.feeType, `${formatAmount(fee.amount)} · ${fee.status}`]),

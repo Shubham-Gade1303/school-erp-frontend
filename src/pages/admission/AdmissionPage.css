@@ -286,17 +286,16 @@
   font-weight: 700;
 }
 
+.admission-field .required-marker {
+  color: #b53f50;
+}
+
 .student-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 17px;
   max-width: 820px;
   margin-top: 20px;
-}
-
-.student-form .admission-number-readonly {
-  color: #777382;
-  background: #f4f3f7;
 }
 
 .enrolling-summary {
@@ -555,6 +554,37 @@
   border-bottom: 1px solid #efedf3;
 }
 
+.document-record-content {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.document-record-content > div {
+  min-width: 0;
+}
+
+.document-thumbnail,
+.document-pdf-icon {
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  border-radius: 5px;
+}
+
+.document-thumbnail {
+  object-fit: cover;
+  background: #f3f1f8;
+}
+
+.document-pdf-icon {
+  display: grid;
+  place-items: center;
+  color: #b53f50;
+  background: #fff0f1;
+}
+
 .admission-record strong,
 .admission-record span {
   display: block;
@@ -590,6 +620,23 @@
   opacity: 0.5;
 }
 
+.document-view-link {
+  display: inline-block;
+  margin-top: 5px;
+  text-decoration: none;
+}
+
+.review-document-links {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 10px;
+}
+
+.review-document-links a {
+  color: var(--admission-purple-dark);
+  font-weight: 700;
+}
+
 .danger-text {
   color: #b53f50 !important;
 }
@@ -622,6 +669,31 @@
 .file-selection,
 .field-help {
   color: var(--admission-muted);
+}
+
+.document-upload-progress {
+  position: relative;
+  height: 22px;
+  margin-top: 12px;
+  overflow: hidden;
+  background: #efedf3;
+  border-radius: 5px;
+}
+
+.document-upload-progress > div {
+  height: 100%;
+  background: #7252b5;
+  transition: width 120ms ease;
+}
+
+.document-upload-progress > span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #343142;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .field-error {

@@ -46,6 +46,10 @@ export interface DocumentRecord {
   uploadedDate?: string;
 }
 
+export type DocumentDraft = DocumentRecord & {
+  file?: File;
+};
+
 export interface StudentFee {
   id?: number;
   studentId: number;

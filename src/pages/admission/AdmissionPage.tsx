@@ -55,6 +55,7 @@ export function AdmissionPage() {
     changeStandard,
     selectSection,
     updateStudentField,
+    checkAdmissionNumber,
     saveStudent,
     selectFee,
     saveAddress,
@@ -210,6 +211,7 @@ export function AdmissionPage() {
             standard={currentStandard}
             section={currentSection}
             onChange={updateStudentField}
+            onAdmissionNumberBlur={() => checkAdmissionNumber(studentForm.admissionNumber)}
           />
         )}
         {step === 2 && (
@@ -227,7 +229,17 @@ export function AdmissionPage() {
             draft={documentsDraft}
             saving={saving}
             onDraft={setDocumentsDraft}
-            onSave={() => void saveDocument()}
+            onSave={(onUploadProgress) => {
+              if (
+                documentsDraft
+                && !documentsDraft.file
+                && documentsDraft.documentUrl.length > 500
+              ) {
+                setError("Document URL must be 500 characters or fewer.");
+                return;
+              }
+              void saveDocument(onUploadProgress);
+            }}
             onRemove={(document) => void removeDocument(document)}
           />
         )}

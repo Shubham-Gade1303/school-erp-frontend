@@ -63,12 +63,10 @@ function App() {
         <Route path="/admin" element={<RoleRoute role="ADMIN" />}>
           <Route element={<AppLayout />}>
             <Route path="dashboard" element={<DashboardScreen />} />
-            <Route path="timetable" element={<FeaturePage title="Timetable" />} />
             <Route path="admission" element={<AdmissionPage />} />
             <Route path="academic-years" element={<AcademicYearsPage />} />
             <Route path="students" element={<StudentsPage />} />
             <Route path="teachers" element={<TeachersPage />} />
-            <Route path="classes" element={<FeaturePage title="Classes" />} />
             <Route path="subjects" element={<FeaturePage title="Subjects" />} />
             <Route path="attendance" element={<AttendancePage />} />
             <Route path="exams" element={<FeaturePage title="Exams" />} />
@@ -83,10 +81,8 @@ function App() {
         <Route path="/principal" element={<RoleRoute role="PRINCIPAL" />}>
           <Route element={<AppLayout />}>
             <Route path="dashboard" element={<DashboardScreen />} />
-            <Route path="timetable" element={<FeaturePage title="Timetable" />} />
             <Route path="students" element={<StudentsPage />} />
             <Route path="teachers" element={<FeaturePage title="Teachers" />} />
-            <Route path="classes" element={<FeaturePage title="Classes" />} />
             <Route path="subjects" element={<FeaturePage title="Subjects" />} />
             <Route path="attendance" element={<AttendancePage />} />
             <Route path="exams" element={<FeaturePage title="Exams" />} />
@@ -98,16 +94,36 @@ function App() {
         <Route path="/teacher" element={<RoleRoute role="TEACHER" />}>
           <Route element={<AppLayout />}>
             <Route path="dashboard" element={<DashboardScreen />} />
-            <Route path="timetable" element={<FeaturePage title="Timetable" />} />
-            <Route path="classes" element={<TeacherFeatureRoute title="My Classes" />} />
+            <Route
+              path="classes"
+              element={<TeacherFeatureRoute title="My Classes" />}
+            />
             <Route path="students" element={<StudentsPage />} />
             <Route path="attendance" element={<AttendancePage />} />
-            <Route path="assignments" element={<TeacherFeatureRoute title="Assignments" />} />
-            <Route path="exams" element={<TeacherFeatureRoute title="Exams" />} />
-            <Route path="results" element={<TeacherFeatureRoute title="Results" />} />
-            <Route path="calendar" element={<TeacherFeatureRoute title="Calendar" />} />
-            <Route path="messages" element={<TeacherFeatureRoute title="Messages" />} />
-            <Route path="profile" element={<TeacherFeatureRoute title="Profile" />} />
+            <Route
+              path="assignments"
+              element={<TeacherFeatureRoute title="Assignments" />}
+            />
+            <Route
+              path="exams"
+              element={<TeacherFeatureRoute title="Exams" />}
+            />
+            <Route
+              path="results"
+              element={<TeacherFeatureRoute title="Results" />}
+            />
+            <Route
+              path="calendar"
+              element={<TeacherFeatureRoute title="Calendar" />}
+            />
+            <Route
+              path="messages"
+              element={<TeacherFeatureRoute title="Messages" />}
+            />
+            <Route
+              path="profile"
+              element={<TeacherFeatureRoute title="Profile" />}
+            />
           </Route>
         </Route>
       </Route>
@@ -125,7 +141,10 @@ function FeaturePage({ title }: { title: string }) {
     <section className="content-page feature-placeholder">
       <div className="placeholder-card panel">
         <h1>{title}</h1>
-        <p>This area is ready for the Spring Boot API integration. No placeholder records are shown.</p>
+        <p>
+          This area is ready for the Spring Boot API integration. No placeholder
+          records are shown.
+        </p>
       </div>
     </section>
   );
@@ -155,7 +174,9 @@ function RoleRoute({ role }: { role: UserRole }) {
 function DashboardScreen() {
   const { user, accessDeniedMessage, clearAccessDenied } = useAuth();
   const navigate = useNavigate();
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(
+    null,
+  );
   const [attendanceOverview, setAttendanceOverview] =
     useState<AttendanceOverviewState>({ status: "loading" });
   const role = user?.role;
@@ -210,7 +231,10 @@ function DashboardScreen() {
           present,
           absent,
           notMarked,
-          rate: totalActive > 0 ? Math.round((present / totalActive) * 1000) / 10 : null,
+          rate:
+            totalActive > 0
+              ? Math.round((present / totalActive) * 1000) / 10
+              : null,
           isEmpty: records.length === 0,
         });
       },
@@ -224,12 +248,42 @@ function DashboardScreen() {
   if (!user || !role || (role !== "TEACHER" && !dashboardData)) return null;
 
   const scheduleData = [
-    { time: "08:00 AM", title: "Mathematics", detail: "Class 10 • Room 101", tone: "primary" },
-    { time: "09:00 AM", title: "Science", detail: "Class 9 • Room 102", tone: "success" },
-    { time: "10:00 AM", title: "English", detail: "Class 8 • Room 103", tone: "purple" },
-    { time: "11:00 AM", title: "Social Studies", detail: "Class 7 • Room 104", tone: "orange" },
-    { time: "12:00 PM", title: "Lunch Break", detail: "All Classes", tone: "neutral" },
-    { time: "01:00 PM", title: "Computer Science", detail: "Class 9 • Lab 1", tone: "pink" },
+    {
+      time: "08:00 AM",
+      title: "Mathematics",
+      detail: "Class 10 • Room 101",
+      tone: "primary",
+    },
+    {
+      time: "09:00 AM",
+      title: "Science",
+      detail: "Class 9 • Room 102",
+      tone: "success",
+    },
+    {
+      time: "10:00 AM",
+      title: "English",
+      detail: "Class 8 • Room 103",
+      tone: "purple",
+    },
+    {
+      time: "11:00 AM",
+      title: "Social Studies",
+      detail: "Class 7 • Room 104",
+      tone: "orange",
+    },
+    {
+      time: "12:00 PM",
+      title: "Lunch Break",
+      detail: "All Classes",
+      tone: "neutral",
+    },
+    {
+      time: "01:00 PM",
+      title: "Computer Science",
+      detail: "Class 9 • Lab 1",
+      tone: "pink",
+    },
   ];
 
   const feeCollection = [
@@ -260,7 +314,9 @@ function DashboardScreen() {
           <header className="dashboard-hero-header">
             <div>
               <p className="dashboard-heading-kicker">Dashboard</p>
-              <h1 className="dashboard-heading-title">Welcome to School ERP System</h1>
+              <h1 className="dashboard-heading-title">
+                Welcome to School ERP System
+              </h1>
             </div>
             <div className="dashboard-header-actions">
               <div className="academic-year-pill">
@@ -287,7 +343,8 @@ function DashboardScreen() {
               <div className="panel-header dashboard-panel-header">
                 <h2>Attendance Overview</h2>
                 <button className="dashboard-filter-button" type="button">
-                  {attendanceOverview.status === "loaded" && attendanceOverview.rate !== null
+                  {attendanceOverview.status === "loaded" &&
+                  attendanceOverview.rate !== null
                     ? `Today · ${attendanceOverview.rate}%`
                     : "Today"}
                 </button>
@@ -308,15 +365,33 @@ function DashboardScreen() {
               ) : (
                 <>
                   {attendanceOverview.isEmpty && (
-                    <p className="empty-state" style={{ margin: "0 16px", padding: "0 0 8px" }}>
+                    <p
+                      className="empty-state"
+                      style={{ margin: "0 16px", padding: "0 0 8px" }}
+                    >
                       No attendance marked today.
                     </p>
                   )}
-                  <div className="attendance-chart" aria-label="Today's student attendance">
+                  <div
+                    className="attendance-chart"
+                    aria-label="Today's student attendance"
+                  >
                     {[
-                      { label: "Present", value: attendanceOverview.present, color: "#1eb982" },
-                      { label: "Absent", value: attendanceOverview.absent, color: "#e35f79" },
-                      { label: "Not Marked", value: attendanceOverview.notMarked, color: "#8b98a9" },
+                      {
+                        label: "Present",
+                        value: attendanceOverview.present,
+                        color: "#1eb982",
+                      },
+                      {
+                        label: "Absent",
+                        value: attendanceOverview.absent,
+                        color: "#e35f79",
+                      },
+                      {
+                        label: "Not Marked",
+                        value: attendanceOverview.notMarked,
+                        color: "#8b98a9",
+                      },
                     ].map((item) => (
                       <div className="attendance-column" key={item.label}>
                         <div className="attendance-bar-wrap">
@@ -352,7 +427,11 @@ function DashboardScreen() {
 
               <div className="schedule-list" role="list">
                 {scheduleData.map((item) => (
-                  <div className={`schedule-item ${item.tone}`} key={`${item.time}-${item.title}`} role="listitem">
+                  <div
+                    className={`schedule-item ${item.tone}`}
+                    key={`${item.time}-${item.title}`}
+                    role="listitem"
+                  >
                     <time>{item.time}</time>
                     <div className="schedule-item-body">
                       <div className="schedule-item-icon" aria-hidden="true">
@@ -403,7 +482,9 @@ function DashboardScreen() {
             <div className="performer-list">
               {topPerformers.map((item) => (
                 <div className="performer-item" key={item.name}>
-                  <div className="performer-avatar" aria-hidden="true">{item.name.slice(0, 2).toUpperCase()}</div>
+                  <div className="performer-avatar" aria-hidden="true">
+                    {item.name.slice(0, 2).toUpperCase()}
+                  </div>
                   <div className="performer-copy">
                     <strong>{item.name}</strong>
                     <small>{item.badge}</small>
@@ -465,7 +546,10 @@ function LoginScreen() {
     setIsSubmitting(true);
 
     try {
-      const authenticatedUser = await login({ username: username.trim(), password });
+      const authenticatedUser = await login({
+        username: username.trim(),
+        password,
+      });
       navigate(roleRoutes[authenticatedUser.role], { replace: true });
     } catch (submitError) {
       if (axios.isAxiosError(submitError)) {
@@ -519,9 +603,7 @@ function LoginScreen() {
           </div>
           <p className="eyebrow">School ERP account</p>
           <h2>Welcome Back</h2>
-          <p className="login-intro">
-            Sign in to your School ERP account
-          </p>
+          <p className="login-intro">Sign in to your School ERP account</p>
           <form onSubmit={handleSubmit}>
             <label className="form-field">
               <span>Username</span>
@@ -567,8 +649,13 @@ function LoginScreen() {
                 {error}
               </p>
             )}
-            <button className="login-submit" disabled={isSubmitting} type="submit">
-              {isSubmitting ? "Signing In..." : "Sign In"} <ArrowRight size={18} />
+            <button
+              className="login-submit"
+              disabled={isSubmitting}
+              type="submit"
+            >
+              {isSubmitting ? "Signing In..." : "Sign In"}{" "}
+              <ArrowRight size={18} />
             </button>
           </form>
           <p className="support-copy">

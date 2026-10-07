@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useState, type ChangeEvent } from "react";
 import { FileText } from "lucide-react";
-import type { DocumentRecord } from "../../../types/admission";
+import type { DocumentDraft, DocumentRecord } from "../../../types/admission";
 import { EmptyState } from "../components/EmptyState";
 import { Field } from "../components/Field";
 import { RecordEditor } from "../components/RecordEditor";
@@ -23,23 +23,14 @@ export function DocumentsStep({
 }: {
   studentId: number;
   documents: DocumentRecord[];
-  draft: DocumentRecord | null;
+  draft: DocumentDraft | null;
   saving: boolean;
-  onDraft: (draft: DocumentRecord | null) => void;
-  onSave: () => void;
+  onDraft: (draft: DocumentDraft | null) => void;
+  onSave: (onUploadProgress: (progress: number) => void) => void;
   onRemove: (document: DocumentRecord) => void;
 }) {
   const [fileError, setFileError] = useState("");
-  const [readingFile, setReadingFile] = useState(false);
-  const readerRef = useRef<FileReader | null>(null);
-
-  useEffect(() => () => readerRef.current?.abort(), []);
-
-  function cancelFileRead() {
-    readerRef.current?.abort();
-    readerRef.current = null;
-    setReadingFile(false);
-  }
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   function selectFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -57,26 +48,13 @@ export function DocumentsStep({
       event.target.value = "";
       return;
     }
-    cancelFileRead();
-    const reader = new FileReader();
-    readerRef.current = reader;
-    setReadingFile(true);
-    reader.onerror = () => {
-      readerRef.current = null;
-      setReadingFile(false);
-      setFileError("Unable to read the selected file. Please try again.");
-    };
-    reader.onload = () => {
-      readerRef.current = null;
-      setReadingFile(false);
-      if (typeof reader.result !== "string") {
-        setFileError("Unable to read the selected file. Please try again.");
-        return;
-      }
-      setFileError("");
-      onDraft({ ...draft, documentName: file.name, documentUrl: reader.result });
-    };
-    reader.readAsDataURL(file);
+    setFileError("");
+    onDraft({ ...draft, file, documentName: file.name });
+  }
+
+  function saveDraft() {
+    setUploadProgress(draft?.file ? 0 : null);
+    onSave(setUploadProgress);
   }
 
   return (
@@ -88,12 +66,20 @@ export function DocumentsStep({
       <div className="record-list">
         {documents.map((document, index) => (
           <div className="admission-record" key={document.id ?? `${document.documentName}-${index}`}>
-            <div>
-              <strong>{document.documentName}</strong>
-              <span>{document.documentType} · Uploaded {formatDate(document.uploadedDate)}</span>
+            <div className="document-record-content">
+              {isImage(document.documentName) ? (
+                <img alt="" className="document-thumbnail" src={document.documentUrl} />
+              ) : (
+                <span aria-label="PDF document" className="document-pdf-icon"><FileText size={20} /></span>
+              )}
+              <div>
+                <strong>{document.documentName}</strong>
+                <span>{document.documentType} · {isImage(document.documentName) ? "Image" : "PDF"} · Uploaded {formatDate(document.uploadedDate)}</span>
+                {document.documentUrl && <a className="text-button document-view-link" href={document.documentUrl} rel="noopener noreferrer" target="_blank">View</a>}
+              </div>
             </div>
             <div className="record-actions">
-              <button className="text-button" disabled={saving} onClick={() => { cancelFileRead(); setFileError(""); onDraft(document); }} type="button">Replace</button>
+              <button className="text-button" disabled={saving} onClick={() => { setFileError(""); setUploadProgress(null); onDraft({ ...document, file: undefined }); }} type="button">Replace</button>
               <button className="text-button danger-text" disabled={saving} onClick={() => onRemove(document)} type="button">Remove</button>
             </div>
           </div>
@@ -109,15 +95,25 @@ export function DocumentsStep({
                 {documentTypes.map((type) => <option key={type} value={type}>{type}</option>)}
               </select>
             </Field>
-            <Field label="Upload File" required={!draft.documentUrl}>
-              <input accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" onChange={selectFile} type="file" />
+            <Field label="Upload File" required={!draft.id}>
+              <input accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" disabled={saving} onChange={selectFile} type="file" />
             </Field>
           </div>
-          {draft.documentName && <p className="file-selection">Selected file: {draft.documentName}</p>}
+          {draft.file ? (
+            <p className="file-selection">Selected file: {draft.file.name} ({formatFileSize(draft.file.size)})</p>
+          ) : draft.id ? (
+            <p className="file-selection">Current file: {draft.documentName}</p>
+          ) : null}
           {fileError && <p className="field-error" role="alert">{fileError}</p>}
+          {uploadProgress !== null && saving && draft.file && (
+            <div aria-label="Upload progress" aria-valuemax={100} aria-valuemin={0} aria-valuenow={uploadProgress} className="document-upload-progress" role="progressbar">
+              <div style={{ width: `${uploadProgress}%` }} />
+              <span>{`Uploading ${uploadProgress}%`}</span>
+            </div>
+          )}
           <div className="editor-actions">
-            <button className="secondary-button" disabled={saving || readingFile} onClick={onSave} type="button">{readingFile ? "Reading file..." : saving ? "Saving..." : "Save document"}</button>
-            <button className="text-button" disabled={saving} onClick={() => { cancelFileRead(); setFileError(""); onDraft(null); }} type="button">Cancel</button>
+            <button className="secondary-button" disabled={saving} onClick={saveDraft} type="button">{saving ? draft.file ? "Uploading..." : "Saving..." : "Save document"}</button>
+            <button className="text-button" disabled={saving} onClick={() => { setFileError(""); setUploadProgress(null); onDraft(null); }} type="button">Cancel</button>
           </div>
         </RecordEditor>
       ) : (
@@ -131,4 +127,14 @@ export function DocumentsStep({
       )}
     </StepIntro>
   );
+}
+
+function isImage(fileName: string) {
+  return /\.(jpe?g|png)$/i.test(fileName);
+}
+
+function formatFileSize(size: number) {
+  return size < 1024 * 1024
+    ? `${Math.max(1, Math.round(size / 1024))} KB`
+    : `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }

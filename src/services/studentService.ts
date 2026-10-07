@@ -15,6 +15,12 @@ export function getStudentByAdmissionNumber(admissionNumber: string) {
   return axiosClient.get<StudentResponse>(`${studentsPath}/admission/${admissionNumber}`);
 }
 
+export function checkAdmissionNumberExists(value: string) {
+  return axiosClient.get<{ exists: boolean }>(`${studentsPath}/admission-number/exists`, {
+    params: { value },
+  });
+}
+
 export function getStudentsByClassSection(classSectionId: number) {
   return axiosClient.get<StudentResponse[]>(`${studentsPath}/class-section/${classSectionId}`);
 }

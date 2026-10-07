@@ -8,7 +8,10 @@ export function AdmissionStep({
   onChange,
 }: {
   workflow: AdmissionWorkflow;
-  onChange: (field: "admissionDate" | "admissionStatus" | "remarks", value: string) => void;
+  onChange: (
+    field: "admissionDate" | "admissionStatus" | "remarks",
+    value: string,
+  ) => void;
 }) {
   return (
     <StepIntro
@@ -18,17 +21,29 @@ export function AdmissionStep({
     >
       <div className="admission-form-grid">
         <Field label="Admission Date" required>
-          <input type="date" value={workflow.admissionDate} onChange={(event) => onChange("admissionDate", event.target.value)} />
+          <input
+            type="date"
+            value={workflow.admissionDate}
+            onChange={(event) => onChange("admissionDate", event.target.value)}
+          />
         </Field>
         <Field label="Admission Status" required>
-          <select value={workflow.admissionStatus} onChange={(event) => onChange("admissionStatus", event.target.value)}>
+          <select
+            value={workflow.admissionStatus}
+            onChange={(event) =>
+              onChange("admissionStatus", event.target.value)
+            }
+          >
             <option value="PENDING">Pending</option>
             <option value="ACTIVE">Active</option>
             <option value="COMPLETED">Completed</option>
           </select>
         </Field>
         <Field label="Remarks">
-          <textarea value={workflow.remarks} onChange={(event) => onChange("remarks", event.target.value)} />
+          <textarea
+            value={workflow.remarks}
+            onChange={(event) => onChange("remarks", event.target.value)}
+          />
         </Field>
       </div>
     </StepIntro>

@@ -16,7 +16,7 @@ export function Field({
       <label>
         <span>
           {label}
-          {required ? " *" : ""}
+          {required && <span className="required-marker"> *</span>}
         </span>
         {children}
       </label>

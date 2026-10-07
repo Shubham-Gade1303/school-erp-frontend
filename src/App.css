@@ -978,15 +978,31 @@
   outline-offset: 1px;
 }
 
-.subject-tone-0 { background: #4d6dd8; }
-.subject-tone-1 { background: #218c77; }
-.subject-tone-2 { background: #8055b8; }
-.subject-tone-3 { background: #c27732; }
-.subject-tone-4 { background: #b35376; }
+.subject-tone-0 {
+  background: #4d6dd8;
+}
+.subject-tone-1 {
+  background: #218c77;
+}
+.subject-tone-2 {
+  background: #8055b8;
+}
+.subject-tone-3 {
+  background: #c27732;
+}
+.subject-tone-4 {
+  background: #b35376;
+}
 
-.attendance-bar.present { background: #1eb982; }
-.attendance-bar.absent { background: #e35f79; }
-.attendance-bar.not-marked { background: #8b98a9; }
+.attendance-bar.present {
+  background: #1eb982;
+}
+.attendance-bar.absent {
+  background: #e35f79;
+}
+.attendance-bar.not-marked {
+  background: #8b98a9;
+}
 
 .dashboard-metric-pill {
   color: #495b72;
@@ -1086,9 +1102,16 @@
   animation: dashboard-shimmer 1.2s ease-in-out infinite;
 }
 
-.dashboard-stat-skeleton i:first-child { width: 94px; }
-.dashboard-stat-skeleton i:nth-child(2) { width: 58px; height: 17px; }
-.dashboard-stat-skeleton i:last-child { width: 76px; }
+.dashboard-stat-skeleton i:first-child {
+  width: 94px;
+}
+.dashboard-stat-skeleton i:nth-child(2) {
+  width: 58px;
+  height: 17px;
+}
+.dashboard-stat-skeleton i:last-child {
+  width: 76px;
+}
 
 .dashboard-section-skeleton {
   display: grid;
@@ -1138,7 +1161,9 @@
 }
 
 @keyframes dashboard-shimmer {
-  to { background-position: -200% 0; }
+  to {
+    background-position: -200% 0;
+  }
 }
 
 @media (max-width: 900px) {
