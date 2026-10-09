@@ -151,24 +151,35 @@ export function DashboardScreen() {
         </section>
       </div>
 
-      <section className="panel dashboard-panel dashboard-fees fee-panel">
-        <div className="panel-header dashboard-panel-header">
-          <h2>Fee Collection - Month Wise</h2>
-          <label className="dashboard-month-picker">
-            <span className="visually-hidden">Fee collection month</span>
-            <input
-              max={getCurrentMonth()}
-              onChange={(event) => dashboard.setMonth(event.target.value)}
-              type="month"
-              value={dashboard.month}
-            />
-          </label>
-        </div>
-        <FeeContent
-          state={dashboard.fees}
-          onRetry={() => void dashboard.refetchFees()}
-        />
-      </section>
+      <div className="dashboard-fee-layout">
+        <section className="panel dashboard-panel dashboard-fees fee-panel">
+          <div className="panel-header dashboard-panel-header">
+            <h2>Fee Collection - Month Wise</h2>
+            <label className="dashboard-month-picker">
+              <span className="visually-hidden">Fee collection month</span>
+              <input
+                max={getCurrentMonth()}
+                onChange={(event) => dashboard.setMonth(event.target.value)}
+                type="month"
+                value={dashboard.month}
+              />
+            </label>
+          </div>
+          <FeeContent
+            state={dashboard.fees}
+            onRetry={() => void dashboard.refetchFees()}
+          />
+        </section>
+
+        <section className="panel dashboard-panel dashboard-placeholder-card">
+          <div className="panel-header dashboard-panel-header">
+            <h2>Fee Overview</h2>
+          </div>
+          <div className="dashboard-placeholder-copy">
+            <p>More dashboard insights will appear here.</p>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

@@ -114,7 +114,7 @@
   overflow-y: auto;
   border-radius: 0 9px 9px 0;
   background: #fffefa;
-  padding: 14px 14px 22px;
+  padding: 14px 0 22px;
 }
 .topbar {
   height: 41px;
@@ -258,8 +258,9 @@
 
 .dashboard-page-shell {
   width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin-left: 0;
+  margin-right: 0;
   padding: 22px 0 28px;
 }
 
@@ -452,6 +453,20 @@
   justify-content: space-between;
   gap: 10px;
   padding: 18px 20px 14px;
+}
+
+.dashboard-fee-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dashboard-fee-layout > * {
+  min-width: 0;
+  box-sizing: border-box;
+
 }
 
 .dashboard-panel-header h2 {
@@ -757,7 +772,7 @@
 }
 
 .dashboard-page-shell {
-  padding: var(--dashboard-page-padding);
+  padding: var(--dashboard-page-padding) 0;
 }
 
 .dashboard-hero-header {
@@ -1178,7 +1193,7 @@
 
 @media (max-width: 640px) {
   .dashboard-page-shell {
-    padding: var(--dashboard-page-padding);
+    padding: var(--dashboard-page-padding) 0;
   }
 
   .dashboard-hero-header {
@@ -1716,7 +1731,7 @@
   }
   .content-area {
     border-radius: 0;
-    padding: 12px;
+    padding: 12px 0;
   }
   .topbar {
     gap: 9px;
