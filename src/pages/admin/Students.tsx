@@ -1,11 +1,10 @@
-﻿import axios from "axios";
+import axios from "axios";
 import {
   Eye,
   GraduationCap,
   Pencil,
   RefreshCw,
   Search,
-  Trash2,
   UsersRound,
   X,
 } from "lucide-react";
@@ -17,62 +16,88 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
-import axiosClient from "../../API/axiosClient";
 import { useAuth } from "../../context/AuthContext";
 import {
   getAcademicYears,
   getClassSections,
-  getFeePayments,
   getStandards,
-  getStudentAddress,
-  getStudentDocuments,
-  getStudentFees,
 } from "../../services/admissionService";
 import {
-  deleteStudent,
-  getStudentsByClassSection,
+  getStudentActivitiesParticipation,
   getStudentById,
+  getStudentDirectoryDocuments,
+  getStudentDisciplinaryRecords,
+  getStudentMarks,
+  getStudentPerformance,
+  getStudentPromotionHistory,
+  getStudentsByClassSection,
   updateStudent,
 } from "../../services/studentService";
 import type {
   AcademicYear,
-  AddressRecord,
   ClassSection,
   DocumentRecord,
-  FeePayment,
   Standard,
-  StudentFee,
 } from "../../types/admission";
-import type { StudentRequest, StudentResponse } from "../../types/student";
+import type {
+  Student,
+  StudentActivitiesParticipation,
+  StudentDisciplinaryRecord,
+  StudentMarks,
+  StudentPerformanceSummary,
+  StudentPromotionHistory,
+  StudentRequest,
+} from "../../types/student";
 
 const PAGE_SIZE = 10;
 const genders = ["Male", "Female", "Other"];
 const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
-type StatusFilter = "all" | "active" | "inactive";
-type StandardWithDisplayOrder = Standard & { displayOrder?: number };
+type DirectoryStandard = Standard & { displayOrder?: number };
 type ActiveClassSection = ClassSection & { active?: boolean };
-
-type StudentAdmissionRecord = {
-  id?: number;
-  studentId?: number;
-  academicYear?: string;
-  standardName?: string;
-  sectionName?: string;
-  admissionDate?: string;
-  admissionStatus?: string;
-  remarks?: string;
-};
-
-type StudentDetailState = {
-  student: StudentResponse;
-  address: AddressRecord | null;
+type ProfileSection =
+  | "basic"
+  | "marks"
+  | "performance"
+  | "activities"
+  | "discipline"
+  | "promotion"
+  | "documents";
+type ProfileSectionStatus = { loading: boolean; error: string };
+type ProfileStatuses = Record<ProfileSection, ProfileSectionStatus>;
+type ProfileData = {
+  basic: Student | null;
+  marks: StudentMarks[];
+  performance: StudentPerformanceSummary[];
+  activities: StudentActivitiesParticipation[];
+  discipline: StudentDisciplinaryRecord[];
+  promotion: StudentPromotionHistory[];
   documents: DocumentRecord[];
-  admission: StudentAdmissionRecord | null;
-  fees: StudentFee[];
-  paymentsByFeeId: Map<number, FeePayment[]>;
 };
 
+function createProfileStatuses(loading: boolean): ProfileStatuses {
+  return {
+    basic: { loading, error: "" },
+    marks: { loading, error: "" },
+    performance: { loading, error: "" },
+    activities: { loading, error: "" },
+    discipline: { loading, error: "" },
+    promotion: { loading, error: "" },
+    documents: { loading, error: "" },
+  };
+}
+
+function createEmptyProfileData(): ProfileData {
+  return {
+    basic: null,
+    marks: [],
+    performance: [],
+    activities: [],
+    discipline: [],
+    promotion: [],
+    documents: [],
+  };
+}
 type StudentFormState = {
   admissionNumber: string;
   firstName: string;
@@ -89,63 +114,66 @@ export function StudentsPage() {
   const { user } = useAuth();
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [academicYearId, setAcademicYearId] = useState<number | null>(null);
-  const [standards, setStandards] = useState<Standard[]>([]);
+  const [standards, setStandards] = useState<DirectoryStandard[]>([]);
   const [selectedStandardId, setSelectedStandardId] = useState<number | null>(
     null,
   );
-  const [sections, setSections] = useState<ClassSection[]>([]);
+  const [sections, setSections] = useState<ActiveClassSection[]>([]);
   const [selectedClassSectionId, setSelectedClassSectionId] = useState<
     number | null
   >(null);
-  const [students, setStudents] = useState<StudentResponse[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
-  const [isLoadingStandards, setIsLoadingStandards] = useState(true);
+
   const [isLoadingAcademicYears, setIsLoadingAcademicYears] = useState(true);
+  const [isLoadingStandards, setIsLoadingStandards] = useState(true);
   const [isLoadingSections, setIsLoadingSections] = useState(false);
   const [isLoadingStudents, setIsLoadingStudents] = useState(false);
-  const [sectionsLoadFailed, setSectionsLoadFailed] = useState(false);
-  const [studentsLoadFailed, setStudentsLoadFailed] = useState(false);
-  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [academicYearsError, setAcademicYearsError] = useState("");
+  const [standardsError, setStandardsError] = useState("");
+  const [sectionsError, setSectionsError] = useState("");
+  const [studentsError, setStudentsError] = useState("");
+
+  const [formStudent, setFormStudent] = useState<Student | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState("");
+  const [editError, setEditError] = useState("");
   const [notice, setNotice] = useState("");
-  const [formStudent, setFormStudent] = useState<StudentResponse | null>(null);
-  const [detailState, setDetailState] = useState<StudentDetailState | null>(
-    null,
+
+  const [profileStudentId, setProfileStudentId] = useState<number | null>(null);
+  const [profileStudent, setProfileStudent] = useState<Student | null>(null);
+  const [profileData, setProfileData] = useState<ProfileData>(
+    createEmptyProfileData,
   );
-  const [deleteTarget, setDeleteTarget] = useState<StudentResponse | null>(
-    null,
+  const [profileStatuses, setProfileStatuses] = useState<ProfileStatuses>(() =>
+    createProfileStatuses(false),
   );
+
   const sectionsRequestId = useRef(0);
   const studentsRequestId = useRef(0);
+  const profileRequestId = useRef(0);
+  const academicYearsRequestId = useRef(0);
+  const standardsRequestId = useRef(0);
+  const sectionsInFlight = useRef<string | null>(null);
+  const studentsInFlight = useRef<number | null>(null);
+  const academicYearsInFlight = useRef(false);
+  const standardsInFlight = useRef(false);
+  const profileController = useRef<AbortController | null>(null);
 
   const canManage = user?.role === "ADMIN" || user?.role === "PRINCIPAL";
   const selectedStandard =
     standards.find((standard) => standard.id === selectedStandardId) ?? null;
-  const selectedAcademicYear =
-    academicYears.find((year) => year.id === academicYearId) ?? null;
-  const selectedSection =
-    sections.find((section) => section.id === selectedClassSectionId) ?? null;
-
   const normalizedSearch = search.trim().toLowerCase();
-  const filteredStudents = useMemo(() => {
-    return students.filter((student) => {
-      const fullName = [student.firstName, student.middleName, student.lastName]
-        .filter(Boolean)
-        .join(" ");
-      const matchesSearch = `${fullName} ${student.admissionNumber}`
-        .toLowerCase()
-        .includes(normalizedSearch);
-      const matchesStatus =
-        status === "all" ||
-        (status === "active" ? student.active : !student.active);
-      return matchesSearch && matchesStatus;
-    });
-  }, [normalizedSearch, students, status]);
 
+  const filteredStudents = useMemo(
+    () =>
+      students.filter((student) =>
+        `${getStudentName(student)} ${student.admissionNumber}`
+          .toLowerCase()
+          .includes(normalizedSearch),
+      ),
+    [normalizedSearch, students],
+  );
   const totalPages = Math.max(
     1,
     Math.ceil(filteredStudents.length / PAGE_SIZE),
@@ -157,292 +185,461 @@ export function StudentsPage() {
   const activeStudents = students.filter((student) => student.active).length;
 
   useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
+    void loadAcademicYears();
+    void loadStandards();
+    return () => {
+      academicYearsInFlight.current = false;
+      standardsInFlight.current = false;
+      academicYearsRequestId.current += 1;
+      standardsRequestId.current += 1;
+      sectionsRequestId.current += 1;
+      studentsRequestId.current += 1;
+      profileRequestId.current += 1;
+      sectionsInFlight.current = null;
+      studentsInFlight.current = null;
+      profileController.current?.abort();
+      profileController.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
 
-  async function loadAcademicData() {
+  async function loadAcademicYears() {
+    if (academicYearsInFlight.current) return;
+    academicYearsInFlight.current = true;
+    const requestId = ++academicYearsRequestId.current;
     setIsLoadingAcademicYears(true);
-    setIsLoadingStandards(true);
-    setError("");
-    const [yearsResult, standardsResult] = await Promise.allSettled([
-      getAcademicYears(),
-      getStandards(),
-    ]);
-    const failures: string[] = [];
-    let nextAcademicYearId = academicYearId;
-
-    if (yearsResult.status === "fulfilled") {
-      const years = normalizeList<AcademicYear>(yearsResult.value.data);
+    setAcademicYearsError("");
+    try {
+      const response = await getAcademicYears();
+      if (requestId !== academicYearsRequestId.current) return;
+      const years = response.data;
       setAcademicYears(years);
-      const selectedYear = years.find((year) => year.id === academicYearId);
-      const activeYear = years.find((year) => year.active);
-      nextAcademicYearId = (selectedYear ?? activeYear ?? years[0])?.id ?? null;
-      setAcademicYearId(nextAcademicYearId);
-    } else {
-      failures.push("Unable to load academic years.");
-    }
-
-    let hasSelectedStandard = selectedStandardId !== null;
-    if (standardsResult.status === "fulfilled") {
-      const nextStandards = sortStandards(
-        normalizeList<StandardWithDisplayOrder>(standardsResult.value.data),
+      const nextYearId = years.some((year) => year.id === academicYearId)
+        ? academicYearId
+        : (years.find((year) => year.active)?.id ?? years[0]?.id ?? null);
+      setAcademicYearId(nextYearId);
+      if (academicYearId !== null && nextYearId !== academicYearId)
+        clearStandardAndSection();
+    } catch (loadError) {
+      if (requestId !== academicYearsRequestId.current) return;
+      setAcademicYearsError(
+        getErrorMessage(loadError, "Unable to load academic years."),
       );
-      setStandards(nextStandards);
-      hasSelectedStandard = nextStandards.some(
-        (standard) => standard.id === selectedStandardId,
-      );
-      if (!hasSelectedStandard) {
-        setSelectedStandardId(null);
-        setSelectedClassSectionId(null);
-        setSections([]);
-        setStudents([]);
+      setAcademicYears([]);
+      setAcademicYearId(null);
+      clearStandardAndSection();
+    } finally {
+      if (requestId === academicYearsRequestId.current) {
+        academicYearsInFlight.current = false;
+        setIsLoadingAcademicYears(false);
       }
-    } else {
-      failures.push("Unable to load standards.");
-    }
-
-    setError(failures.join(" "));
-    setIsLoadingAcademicYears(false);
-    setIsLoadingStandards(false);
-
-    if (
-      failures.length === 0 &&
-      nextAcademicYearId &&
-      selectedStandardId !== null &&
-      hasSelectedStandard
-    ) {
-      await loadSectionsForStandard(selectedStandardId, nextAcademicYearId);
     }
   }
 
-  useEffect(() => {
-    void loadAcademicData();
-  }, []);
+  async function loadStandards() {
+    if (standardsInFlight.current) return;
+    standardsInFlight.current = true;
+    const requestId = ++standardsRequestId.current;
+    setIsLoadingStandards(true);
+    setStandardsError("");
+    try {
+      const response = await getStandards();
+      if (requestId !== standardsRequestId.current) return;
+      const sortedStandards = sortStandards(response.data);
+      setStandards(sortedStandards);
+      const hasSelectedStandard = sortedStandards.some(
+        (standard) => standard.id === selectedStandardId,
+      );
+      if (selectedStandardId !== null && !hasSelectedStandard) {
+        setSelectedStandardId(null);
+        clearSection();
+      }
+    } catch (loadError) {
+      if (requestId !== standardsRequestId.current) return;
+      setStandardsError(
+        getErrorMessage(loadError, "Unable to load standards."),
+      );
+      setStandards([]);
+      setSelectedStandardId(null);
+      clearSection();
+    } finally {
+      if (requestId === standardsRequestId.current) {
+        standardsInFlight.current = false;
+        setIsLoadingStandards(false);
+      }
+    }
+  }
 
-  async function loadSectionsForStandard(standardId: number, yearId: number) {
+  async function loadSectionsForStandard(yearId: number, standardId: number) {
+    const requestKey = `${yearId}:${standardId}`;
+    if (sectionsInFlight.current === requestKey) return;
     const requestId = ++sectionsRequestId.current;
+    sectionsInFlight.current = requestKey;
     setIsLoadingSections(true);
-    setSectionsLoadFailed(false);
-    setError("");
+    setSectionsError("");
     setSections([]);
     try {
       const response = await getClassSections(yearId, standardId);
       if (requestId !== sectionsRequestId.current) return;
-      const nextSections = normalizeList<ActiveClassSection>(response.data)
-        .filter((section) => section.active !== false);
-      setSections(nextSections);
-      if (
-        selectedClassSectionId !== null &&
-        nextSections.some((section) => section.id === selectedClassSectionId)
-      ) {
-        await loadStudentsForSection(selectedClassSectionId);
-      } else {
-        ++studentsRequestId.current;
-        setSelectedClassSectionId(null);
-        setStudents([]);
-        setIsLoadingStudents(false);
-        setStudentsLoadFailed(false);
-        setSearch("");
-        setStatus("all");
-        setPage(1);
-      }
+      setSections(
+        response.data.filter(
+          (section) => !("active" in section) || section.active !== false,
+        ),
+      );
     } catch (loadError) {
       if (requestId !== sectionsRequestId.current) return;
       setSections([]);
-      setSelectedClassSectionId(null);
-      ++studentsRequestId.current;
-      setStudents([]);
-      setIsLoadingStudents(false);
-      setSectionsLoadFailed(true);
-      setError(
-        getErrorMessage(
-          loadError,
-          "Unable to load sections. Please try again.",
-        ),
-      );
+      setSectionsError(getErrorMessage(loadError, "Unable to load sections."));
     } finally {
       if (requestId === sectionsRequestId.current) {
+        sectionsInFlight.current = null;
         setIsLoadingSections(false);
       }
     }
   }
 
   async function loadStudentsForSection(classSectionId: number) {
+    if (studentsInFlight.current === classSectionId) return;
     const requestId = ++studentsRequestId.current;
+    studentsInFlight.current = classSectionId;
     setIsLoadingStudents(true);
-    setStudentsLoadFailed(false);
-    setError("");
-    setNotice("");
+    setStudentsError("");
     setStudents([]);
     try {
       const response = await getStudentsByClassSection(classSectionId);
       if (requestId !== studentsRequestId.current) return;
-      setStudents(normalizeList<StudentResponse>(response.data));
+      setStudents(response.data);
+      setPage(1);
     } catch (loadError) {
       if (requestId !== studentsRequestId.current) return;
       setStudents([]);
-      setStudentsLoadFailed(true);
-      setError(
-        getErrorMessage(loadError, "Unable to load students. Please try again."),
-      );
+      setStudentsError(getErrorMessage(loadError, "Unable to load students."));
     } finally {
       if (requestId === studentsRequestId.current) {
+        studentsInFlight.current = null;
         setIsLoadingStudents(false);
-        setPage(1);
       }
     }
+  }
+
+  function clearSection() {
+    sectionsRequestId.current += 1;
+    studentsRequestId.current += 1;
+    sectionsInFlight.current = null;
+    studentsInFlight.current = null;
+    setSections([]);
+    setSelectedClassSectionId(null);
+    setStudents([]);
+    setIsLoadingSections(false);
+    setIsLoadingStudents(false);
+    setSectionsError("");
+    setStudentsError("");
+    setSearch("");
+    setPage(1);
+  }
+
+  function clearStandardAndSection() {
+    setSelectedStandardId(null);
+    clearSection();
+  }
+
+  function handleAcademicYearChange(value: string) {
+    const nextYearId = value ? Number(value) : null;
+    setAcademicYearId(nextYearId);
+    clearStandardAndSection();
+    setNotice("");
+  }
+
+  function handleStandardSelect(standard: DirectoryStandard) {
+    if (academicYearId === null || selectedStandardId === standard.id) return;
+    clearSection();
+    setSelectedStandardId(standard.id);
+    setNotice("");
+    void loadSectionsForStandard(academicYearId, standard.id);
+  }
+
+  function handleSectionSelect(section: ActiveClassSection) {
+    if (selectedClassSectionId === section.id) return;
+    studentsRequestId.current += 1;
+    studentsInFlight.current = null;
+    setSelectedClassSectionId(section.id);
+    setStudents([]);
+    setStudentsError("");
+    setSearch("");
+    setPage(1);
+    void loadStudentsForSection(section.id);
+  }
+
+  function openStudentProfile(student: Student) {
+    profileController.current?.abort();
+    const controller = new AbortController();
+    profileController.current = controller;
+    const requestId = ++profileRequestId.current;
+
+    setProfileStudentId(student.id);
+    setProfileStudent(student);
+    setProfileData(createEmptyProfileData());
+    setProfileStatuses(createProfileStatuses(true));
+
+    void loadProfileSection(
+      "basic",
+      getStudentById(student.id, { signal: controller.signal }),
+      requestId,
+      controller.signal,
+      (data) => {
+        setProfileData((current) => ({ ...current, basic: data }));
+        setProfileStudent(data);
+      },
+    );
+    void loadProfileSection(
+      "marks",
+      getStudentMarks(student.id, { signal: controller.signal }),
+      requestId,
+      controller.signal,
+      (response) => {
+        const records = Array.isArray(response)
+          ? response
+          : response.studentMarks;
+        setProfileData((current) => ({ ...current, marks: records }));
+      },
+    );
+    void loadProfileSection(
+      "performance",
+      getStudentPerformance(student.id, { signal: controller.signal }),
+      requestId,
+      controller.signal,
+      (response) => {
+        const records = Array.isArray(response)
+          ? response
+          : response.studentPerformance;
+        setProfileData((current) => ({ ...current, performance: records }));
+      },
+    );
+    void loadProfileSection(
+      "activities",
+      getStudentActivitiesParticipation(student.id, {
+        signal: controller.signal,
+      }),
+      requestId,
+      controller.signal,
+      (response) => {
+        const records = Array.isArray(response)
+          ? response
+          : response.studentActivitiesParticipation;
+        setProfileData((current) => ({ ...current, activities: records }));
+      },
+    );
+    void loadProfileSection(
+      "discipline",
+      getStudentDisciplinaryRecords(student.id, { signal: controller.signal }),
+      requestId,
+      controller.signal,
+      (response) => {
+        const records = Array.isArray(response)
+          ? response
+          : response.disciplinaryRecords;
+        setProfileData((current) => ({ ...current, discipline: records }));
+      },
+    );
+    void loadProfileSection(
+      "promotion",
+      getStudentPromotionHistory(student.id, { signal: controller.signal }),
+      requestId,
+      controller.signal,
+      (response) => {
+        const records = Array.isArray(response)
+          ? response
+          : response.studentPromotionHistory;
+        setProfileData((current) => ({ ...current, promotion: records }));
+      },
+    );
+    void loadProfileSection(
+      "documents",
+      getStudentDirectoryDocuments(student.id, { signal: controller.signal }),
+      requestId,
+      controller.signal,
+      (records) => {
+        setProfileData((current) => ({ ...current, documents: records }));
+      },
+    );
+  }
+
+  async function loadProfileSection<T>(
+    section: ProfileSection,
+    request: Promise<{ data: T }>,
+    requestId: number,
+    signal: AbortSignal,
+    onSuccess: (data: T) => void,
+  ) {
+    setProfileStatuses((current) => ({
+      ...current,
+      [section]: { loading: true, error: "" },
+    }));
+    try {
+      const response = await request;
+      if (signal.aborted || requestId !== profileRequestId.current) return;
+      onSuccess(response.data);
+      setProfileStatuses((current) => ({
+        ...current,
+        [section]: { loading: false, error: "" },
+      }));
+    } catch (loadError) {
+      if (signal.aborted || requestId !== profileRequestId.current) return;
+      setProfileStatuses((current) => ({
+        ...current,
+        [section]: {
+          loading: false,
+          error: getErrorMessage(
+            loadError,
+            `Unable to load ${profileSectionTitle(section).toLowerCase()}.`,
+          ),
+        },
+      }));
+    }
+  }
+
+  function retryProfileSection(section: ProfileSection) {
+    if (
+      profileStudentId === null ||
+      !profileController.current ||
+      profileController.current.signal.aborted
+    )
+      return;
+    const requestId = profileRequestId.current;
+    const { signal } = profileController.current;
+    switch (section) {
+      case "basic":
+        void loadProfileSection(
+          section,
+          getStudentById(profileStudentId, { signal }),
+          requestId,
+          signal,
+          (data) => {
+            setProfileData((current) => ({ ...current, basic: data }));
+            setProfileStudent(data);
+          },
+        );
+        break;
+      case "marks":
+        void loadProfileSection(
+          section,
+          getStudentMarks(profileStudentId, { signal }),
+          requestId,
+          signal,
+          (response) => {
+            const records = Array.isArray(response)
+              ? response
+              : response.studentMarks;
+            setProfileData((current) => ({ ...current, marks: records }));
+          },
+        );
+        break;
+      case "performance":
+        void loadProfileSection(
+          section,
+          getStudentPerformance(profileStudentId, { signal }),
+          requestId,
+          signal,
+          (response) => {
+            const records = Array.isArray(response)
+              ? response
+              : response.studentPerformance;
+            setProfileData((current) => ({ ...current, performance: records }));
+          },
+        );
+        break;
+      case "activities":
+        void loadProfileSection(
+          section,
+          getStudentActivitiesParticipation(profileStudentId, { signal }),
+          requestId,
+          signal,
+          (response) => {
+            const records = Array.isArray(response)
+              ? response
+              : response.studentActivitiesParticipation;
+            setProfileData((current) => ({ ...current, activities: records }));
+          },
+        );
+        break;
+      case "discipline":
+        void loadProfileSection(
+          section,
+          getStudentDisciplinaryRecords(profileStudentId, { signal }),
+          requestId,
+          signal,
+          (response) => {
+            const records = Array.isArray(response)
+              ? response
+              : response.disciplinaryRecords;
+            setProfileData((current) => ({ ...current, discipline: records }));
+          },
+        );
+        break;
+      case "promotion":
+        void loadProfileSection(
+          section,
+          getStudentPromotionHistory(profileStudentId, { signal }),
+          requestId,
+          signal,
+          (response) => {
+            const records = Array.isArray(response)
+              ? response
+              : response.studentPromotionHistory;
+            setProfileData((current) => ({ ...current, promotion: records }));
+          },
+        );
+        break;
+      case "documents":
+        void loadProfileSection(
+          section,
+          getStudentDirectoryDocuments(profileStudentId, { signal }),
+          requestId,
+          signal,
+          (records) => {
+            setProfileData((current) => ({ ...current, documents: records }));
+          },
+        );
+        break;
+    }
+  }
+
+  function closeStudentProfile() {
+    profileRequestId.current += 1;
+    profileController.current?.abort();
+    profileController.current = null;
+    setProfileStudentId(null);
+    setProfileStudent(null);
+    setProfileData(createEmptyProfileData());
+    setProfileStatuses(createProfileStatuses(false));
   }
 
   async function handleEditSave(request: StudentRequest) {
     if (!formStudent) return;
     setIsSaving(true);
-    setError("");
+    setEditError("");
+    setNotice("");
     try {
       await updateStudent(formStudent.id, request);
+      const sectionId = selectedClassSectionId;
       setFormStudent(null);
       setNotice("Student updated successfully.");
-      if (selectedClassSectionId) {
-        await loadStudentsForSection(selectedClassSectionId);
-      }
+      if (sectionId !== null) await loadStudentsForSection(sectionId);
     } catch (saveError) {
-      setError(getErrorMessage(saveError, "Unable to update student."));
+      setEditError(getErrorMessage(saveError, "Unable to update student."));
     } finally {
       setIsSaving(false);
     }
   }
 
-  async function handleDelete() {
-    if (!deleteTarget) return;
-    setIsDeleting(true);
-    setError("");
-    try {
-      await deleteStudent(deleteTarget.id);
-      setDeleteTarget(null);
-      setNotice("Student deleted successfully.");
-      if (selectedClassSectionId) {
-        await loadStudentsForSection(selectedClassSectionId);
-      }
-    } catch (deleteError) {
-      setError(getErrorMessage(deleteError, "Unable to delete student."));
-    } finally {
-      setIsDeleting(false);
-    }
-  }
-
-  async function openStudentDetails(student: StudentResponse) {
-    setIsLoadingDetails(true);
-    setError("");
-    try {
-      const [
-        studentResponse,
-        addressResponse,
-        documentsResponse,
-        feeResponse,
-        admissionResponse,
-      ] = await Promise.all([
-        getStudentById(student.id).catch(() => ({ data: student }) as any),
-        getStudentAddress(student.id).catch(() => ({ data: null }) as any),
-        getStudentDocuments(student.id).catch(() => ({ data: [] }) as any),
-        axiosClient
-          .get<StudentFee[]>(`/student-fees/student/${student.id}`)
-          .catch(async () =>
-            academicYearId
-              ? await getStudentFees(student.id, academicYearId)
-              : ({ data: [] as StudentFee[] } as any),
-          ),
-        axiosClient
-          .get<
-            StudentAdmissionRecord[]
-          >(`/student-admissions/student/${student.id}`)
-          .catch(() => ({ data: [] as StudentAdmissionRecord[] }) as any),
-      ]);
-
-      const loadedStudent = (studentResponse.data ??
-        student) as StudentResponse;
-      const loadedAddress = (addressResponse.data ??
-        null) as AddressRecord | null;
-      const loadedDocuments = normalizeList<DocumentRecord>(
-        documentsResponse.data,
-      );
-      const loadedFees = normalizeList<StudentFee>(feeResponse.data);
-      const loadedAdmissions = normalizeList<StudentAdmissionRecord>(
-        admissionResponse.data,
-      );
-
-      const paymentResults = await Promise.all(
-        loadedFees.map(async (fee) => {
-          if (!fee.id) return [] as FeePayment[];
-          return getFeePayments(fee.id)
-            .catch(() => ({ data: [] }))
-            .then((response) => normalizeList<FeePayment>(response.data));
-        }),
-      );
-
-      const paymentsByFeeId = new Map<number, FeePayment[]>();
-      loadedFees.forEach((fee, index) => {
-        if (fee.id) {
-          paymentsByFeeId.set(fee.id, paymentResults[index] ?? []);
-        }
-      });
-
-      setDetailState({
-        student: loadedStudent,
-        address: loadedAddress,
-        documents: loadedDocuments,
-        admission: loadedAdmissions[0] ?? null,
-        fees: loadedFees,
-        paymentsByFeeId,
-      });
-    } catch (loadError) {
-      setError(
-        getErrorMessage(
-          loadError,
-          "Unable to load student details. Please try again.",
-        ),
-      );
-    } finally {
-      setIsLoadingDetails(false);
-    }
-  }
-
-  function handleStandardSelect(standard: Standard) {
-    ++sectionsRequestId.current;
-    ++studentsRequestId.current;
-    setSelectedStandardId(standard.id);
-    setSelectedClassSectionId(null);
-    setSections([]);
-    setSectionsLoadFailed(false);
-    setStudents([]);
-    setIsLoadingSections(false);
-    setIsLoadingStudents(false);
-    setStudentsLoadFailed(false);
-    setSearch("");
-    setStatus("all");
-    setPage(1);
-    if (academicYearId !== null) {
-      void loadSectionsForStandard(standard.id, academicYearId);
-    }
-  }
-
-  function handleSectionSelect(section: ClassSection) {
-    setSelectedClassSectionId(section.id);
-    setStudents([]);
-    setStudentsLoadFailed(false);
-    setSearch("");
-    setStatus("all");
-    setPage(1);
-    if (section.id) {
-      void loadStudentsForSection(section.id);
-    }
-  }
-
   return (
-    <section className="teacher-management-page student-directory-shell">
-      <div className="management-heading teacher-page-heading">
+    <section className="teacher-management-page student-directory-shell student-directory-redesign">
+      <div className="management-heading teacher-page-heading student-directory-heading">
         <div>
-          <p className="eyebrow">Student directory</p>
+          <p className="eyebrow">Student Directory</p>
           <h1>Students</h1>
           <p>Browse students by academic year, standard and section.</p>
         </div>
@@ -451,11 +648,6 @@ export function StudentsPage() {
       {notice && (
         <p className="success-message" role="status">
           {notice}
-        </p>
-      )}
-      {error && (
-        <p className="form-error" role="alert">
-          {error}
         </p>
       )}
 
@@ -482,164 +674,181 @@ export function StudentsPage() {
         />
       </div>
 
-      <section className="panel teacher-table-panel student-directory-panel">
-        <div className="student-select-header">
-          <div>
-            <p className="eyebrow">Academic year</p>
-            <h2>
-              {selectedAcademicYear?.academicYear ?? "Select academic year"}
-            </h2>
-          </div>
+      <section className="panel student-directory-filter-card">
+        <div className="student-directory-filter-top">
+          <label className="student-directory-year-field">
+            <span>Academic Year</span>
+            <select
+              aria-label="Academic year"
+              disabled={isLoadingAcademicYears || academicYearsError !== ""}
+              onChange={(event) => handleAcademicYearChange(event.target.value)}
+              value={academicYearId ?? ""}
+            >
+              <option value="">
+                {isLoadingAcademicYears ? "Loading academic years..." : "Select academic year"}
+              </option>
+              {academicYears.map((year) => (
+                <option key={year.id} value={year.id}>{year.academicYear}</option>
+              ))}
+            </select>
+          </label>
           <button
-            className="refresh-link refresh-button"
+            className="secondary-button student-directory-refresh"
             disabled={isLoadingAcademicYears || isLoadingStandards}
-            onClick={() => void loadAcademicData()}
+            onClick={() => {
+              void loadAcademicYears();
+              void loadStandards();
+            }}
             type="button"
           >
             <RefreshCw size={14} /> Refresh
           </button>
         </div>
 
-        {isLoadingStandards || isLoadingAcademicYears ? (
-          <p className="empty-state">
-            {isLoadingAcademicYears ? "Loading academic years..." : "Loading standards..."}
+        {academicYearsError && (
+          <DirectoryError
+            isRetryDisabled={isLoadingAcademicYears}
+            message={academicYearsError}
+            onRetry={() => void loadAcademicYears()}
+          />
+        )}
+        {standardsError && (
+          <DirectoryError
+            isRetryDisabled={isLoadingStandards}
+            message={standardsError}
+            onRetry={() => void loadStandards()}
+          />
+        )}
+
+        <div className="student-directory-filter-row">
+          <span className="student-directory-filter-label">Standard</span>
+          {isLoadingStandards ? (
+            <span className="student-directory-filter-state">Loading standards...</span>
+          ) : standards.length === 0 ? (
+            <span className="student-directory-filter-state">No standards available.</span>
+          ) : (
+            <div className="student-directory-pills" aria-label="Standards">
+              {standards.map((standard) => (
+                <button
+                  key={standard.id}
+                  className={selectedStandardId === standard.id ? "student-directory-pill active" : "student-directory-pill"}
+                  disabled={academicYearId === null || isLoadingAcademicYears || Boolean(academicYearsError)}
+                  onClick={() => handleStandardSelect(standard)}
+                  type="button"
+                >
+                  {standard.standardName}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="student-directory-filter-row">
+          <span className="student-directory-filter-label">Section</span>
+          {selectedStandardId === null ? (
+            <span className="student-directory-filter-state">Select a standard first.</span>
+          ) : sectionsError ? (
+            <DirectoryError
+              isRetryDisabled={isLoadingSections}
+              message={sectionsError}
+              onRetry={() => {
+                if (academicYearId !== null && selectedStandardId !== null) {
+                  void loadSectionsForStandard(academicYearId, selectedStandardId);
+                }
+              }}
+            />
+          ) : isLoadingSections ? (
+            <span className="student-directory-filter-state">Loading sections...</span>
+          ) : sections.length === 0 ? (
+            <span className="student-directory-filter-state">No sections available.</span>
+          ) : (
+            <div className="student-directory-pills" aria-label="Sections">
+              {sections.map((section) => (
+                <button
+                  key={section.id}
+                  className={selectedClassSectionId === section.id ? "student-directory-pill active" : "student-directory-pill"}
+                  onClick={() => handleSectionSelect(section)}
+                  type="button"
+                >
+                  {section.sectionName}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="panel student-directory-table-card">
+        <div className="student-directory-table-heading">
+          <h2>
+            {selectedSectionTitle(selectedStandard?.standardName, sections.find((section) => section.id === selectedClassSectionId)?.sectionName)}
+          </h2>
+          <div className="student-directory-table-tools">
+            <label className="search-box student-directory-search">
+              <Search size={15} />
+              <input
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search students"
+                value={search}
+              />
+            </label>
+            <span className="student-directory-result-count">{filteredStudents.length} results</span>
+          </div>
+        </div>
+        {studentsError ? (
+          <DirectoryError
+            isRetryDisabled={isLoadingStudents}
+            message={studentsError}
+            onRetry={() => {
+              if (selectedClassSectionId !== null) void loadStudentsForSection(selectedClassSectionId);
+            }}
+          />
+        ) : selectedClassSectionId === null ? (
+          <p className="student-directory-table-empty">
+            {isLoadingAcademicYears
+              ? "Loading academic years..."
+              : academicYears.length === 0
+                ? "No academic years available."
+                : academicYearId === null
+                  ? "Select an academic year to view students."
+                  : isLoadingStandards
+                    ? "Loading standards..."
+                    : standards.length === 0
+                      ? "No standards available."
+                      : selectedStandardId === null
+                        ? "Select a standard to view students."
+                        : "Select a section to view students."}
+          </p>
+        ) : isLoadingStudents ? (
+          <p className="student-directory-table-empty">Loading students...</p>
+        ) : filteredStudents.length === 0 ? (
+          <p className="student-directory-table-empty">
+            {students.length === 0 ? "No students found for this section." : "No students match your search."}
           </p>
         ) : (
-          <div className="student-standard-grid">
-            {standards.map((standard) => (
-              <button
-                key={standard.id}
-                className={
-                  selectedStandardId === standard.id
-                    ? "student-standard-card active"
-                    : "student-standard-card"
-                }
-                onClick={() => handleStandardSelect(standard)}
-                disabled={academicYearId === null || isLoadingAcademicYears}
-                type="button"
-              >
-                <span className="student-standard-card-number">
-                  {standard.standardName}
-                </span>
-                <span className="student-standard-card-label">Standard</span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {!selectedStandardId && !isLoadingStandards && (
-          <p className="empty-state">Select a standard to view students.</p>
-        )}
-
-        {selectedStandardId !== null && (
           <>
-            <div className="student-selection-title">
-              <h3>
-                {selectedStandard?.standardName ?? "Standard"} Standard
-                {selectedSection ? ` - ${selectedSection.sectionName}` : ""}
-              </h3>
-            </div>
-
-            {isLoadingSections ? (
-              <p className="empty-state">Loading sections...</p>
-            ) : sectionsLoadFailed ? null : sections.length === 0 ? (
-              <p className="empty-state">
-                No sections available for this standard.
-              </p>
-            ) : (
-              <div className="student-section-grid">
-                {sections.map((section) => (
-                  <button
-                    key={section.id}
-                    className={
-                      selectedClassSectionId === section.id
-                        ? "student-section-card active"
-                        : "student-section-card"
-                    }
-                    onClick={() => handleSectionSelect(section)}
-                    type="button"
-                  >
-                    {section.sectionName}
-                  </button>
-                ))}
+            <StudentTable
+              canManage={canManage}
+              onEdit={(student) => {
+                setEditError("");
+                setFormStudent(student);
+              }}
+              onView={openStudentProfile}
+              students={visibleStudents}
+            />
+            {filteredStudents.length > PAGE_SIZE && (
+              <div className="student-pagination">
+                <span>Page {page} of {totalPages}</span>
+                <div>
+                  <button className="secondary-button" disabled={page === 1} onClick={() => setPage((current) => current - 1)} type="button">Previous</button>
+                  <button className="secondary-button" disabled={page === totalPages} onClick={() => setPage((current) => current + 1)} type="button">Next</button>
+                </div>
               </div>
             )}
           </>
-        )}
-
-        {selectedClassSectionId !== null && (
-          <div className="student-table-panel">
-            <div className="teacher-toolbar student-toolbar">
-              <label className="search-box teacher-search-box student-search-box">
-                <Search size={15} />
-                <input
-                  onChange={(event) => {
-                    setSearch(event.target.value);
-                    setPage(1);
-                  }}
-                  placeholder="Search by name or admission number"
-                  value={search}
-                />
-              </label>
-              <select
-                aria-label="Filter students by status"
-                onChange={(event) => {
-                  setStatus(event.target.value as StatusFilter);
-                  setPage(1);
-                }}
-                value={status}
-              >
-                <option value="all">All</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
-
-            {isLoadingStudents ? (
-              <p className="empty-state">Loading students...</p>
-            ) : studentsLoadFailed ? null : filteredStudents.length === 0 ? (
-              <p className="empty-state">
-                {students.length === 0
-                  ? "No students found for this section."
-                  : "No students match the selected filters."}
-              </p>
-            ) : (
-              <>
-                <StudentTable
-                  canManage={canManage}
-                  onDelete={setDeleteTarget}
-                  onEdit={setFormStudent}
-                  onView={openStudentDetails}
-                  students={visibleStudents}
-                />
-                {filteredStudents.length > PAGE_SIZE && (
-                  <div className="student-pagination">
-                    <span>
-                      Page {page} of {totalPages}
-                    </span>
-                    <div>
-                      <button
-                        className="secondary-button"
-                        disabled={page === 1}
-                        onClick={() => setPage((current) => current - 1)}
-                        type="button"
-                      >
-                        Previous
-                      </button>
-                      <button
-                        className="secondary-button"
-                        disabled={page === totalPages}
-                        onClick={() => setPage((current) => current + 1)}
-                        type="button"
-                      >
-                        Next
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
         )}
       </section>
 
@@ -657,15 +866,26 @@ export function StudentsPage() {
               </div>
               <button
                 aria-label="Close student form"
-                onClick={() => setFormStudent(null)}
+                onClick={() => {
+                  setEditError("");
+                  setFormStudent(null);
+                }}
                 type="button"
               >
                 <X size={18} />
               </button>
             </div>
+            {editError && (
+              <p className="form-error" role="alert">
+                {editError}
+              </p>
+            )}
             <StudentForm
               isSaving={isSaving}
-              onCancel={() => setFormStudent(null)}
+              onCancel={() => {
+                setEditError("");
+                setFormStudent(null);
+              }}
               onSubmit={handleEditSave}
               student={formStudent}
             />
@@ -673,25 +893,13 @@ export function StudentsPage() {
         </div>
       )}
 
-      {detailState && (
-        <StudentDetailsModal
-          onClose={() => setDetailState(null)}
-          student={detailState.student}
-          address={detailState.address}
-          documents={detailState.documents}
-          admission={detailState.admission}
-          fees={detailState.fees}
-          paymentsByFeeId={detailState.paymentsByFeeId}
-          isLoading={isLoadingDetails}
-        />
-      )}
-
-      {deleteTarget && (
-        <DeleteStudentDialog
-          isDeleting={isDeleting}
-          onCancel={() => setDeleteTarget(null)}
-          onConfirm={handleDelete}
-          student={deleteTarget}
+      {profileStudentId !== null && (
+        <StudentProfileModal
+          data={profileData}
+          statuses={profileStatuses}
+          onRetry={retryProfileSection}
+          onClose={closeStudentProfile}
+          student={profileStudent}
         />
       )}
     </section>
@@ -708,7 +916,7 @@ function StudentStat({
   value: number;
 }) {
   return (
-    <article className="stat-card student-summary-card">
+    <article className="stat-card student-summary-card student-directory-stat">
       <div className="stat-icon purple">{icon}</div>
       <div>
         <span>{label}</span>
@@ -723,23 +931,24 @@ function StudentTable({
   canManage,
   onView,
   onEdit,
-  onDelete,
 }: {
-  students: StudentResponse[];
+  students: Student[];
   canManage: boolean;
-  onView: (student: StudentResponse) => void;
-  onEdit: (student: StudentResponse) => void;
-  onDelete: (student: StudentResponse) => void;
+  onView: (student: Student) => void;
+  onEdit: (student: Student) => void;
 }) {
   return (
-    <div className="teacher-table-wrap">
+    <div className="teacher-table-wrap student-directory-table-scroll">
       <table className="teacher-table student-table">
         <thead>
           <tr>
             <th>Admission No.</th>
-            <th>Student Name</th>
-            <th>DOB</th>
+            <th>Name</th>
+            <th>Standard</th>
+            <th>Section</th>
+            <th>Academic Year</th>
             <th>Gender</th>
+            <th>DOB</th>
             <th>Blood Group</th>
             <th>Status</th>
             <th>Actions</th>
@@ -759,8 +968,11 @@ function StudentTable({
                     <strong>{name}</strong>
                   </div>
                 </td>
+                <td>{student.standardName || "-"}</td>
+                <td>{student.sectionName || "-"}</td>
+                <td>{student.academicYear || "-"}</td>
+                <td>{student.gender || "-"}</td>
                 <td>{formatDate(student.dateOfBirth)}</td>
-                <td>{student.gender}</td>
                 <td>{student.bloodGroup || "-"}</td>
                 <td>
                   <span
@@ -781,28 +993,17 @@ function StudentTable({
                       title="View"
                       type="button"
                     >
-                      <Eye size={15} />
+                      <Eye size={14} /> View
                     </button>
                     {canManage && (
-                      <>
-                        <button
-                          aria-label={`Edit ${name}`}
-                          onClick={() => onEdit(student)}
-                          title="Edit"
-                          type="button"
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          aria-label={`Delete ${name}`}
-                          className="danger-action"
-                          onClick={() => onDelete(student)}
-                          title="Delete"
-                          type="button"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </>
+                      <button
+                        aria-label={`Edit ${name}`}
+                        onClick={() => onEdit(student)}
+                        title="Edit"
+                        type="button"
+                      >
+                        <Pencil size={15} />
+                      </button>
                     )}
                   </div>
                 </td>
@@ -815,13 +1016,517 @@ function StudentTable({
   );
 }
 
+function StudentProfileModal({
+  student,
+  data,
+  statuses,
+  onRetry,
+  onClose,
+}: {
+  student: Student | null;
+  data: ProfileData;
+  statuses: ProfileStatuses;
+  onRetry: (section: ProfileSection) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="dialog-backdrop"
+      role="presentation"
+      style={{ padding: 12 }}
+    >
+      <section
+        aria-labelledby="student-profile-title"
+        className="dialog-card student-details-card"
+        role="dialog"
+        aria-modal="true"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          width: "min(1200px, 100%)",
+          height: "calc(100vh - 24px)",
+          maxHeight: "none",
+          overflow: "hidden",
+          padding: 0,
+        }}
+      >
+        <header
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 1,
+            flex: "0 0 auto",
+            padding: "18px 22px",
+            borderBottom: "1px solid #f0eff1",
+            background: "var(--surface)",
+          }}
+        >
+          <div
+            className="dialog-heading"
+            style={{ alignItems: "center", marginBottom: 0 }}
+          >
+            <div>
+              <p className="eyebrow">Student profile</p>
+              <h2 id="student-profile-title">
+                {student ? getStudentName(student) : "Student details"}
+              </h2>
+              {student && (
+                <div
+                  className="student-profile-meta"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: "6px 12px",
+                    marginTop: 8,
+                    color: "#85818a",
+                    fontSize: 12,
+                  }}
+                >
+                  <span>{student.admissionNumber}</span>
+                  <span
+                    className={
+                      student.active
+                        ? "status-badge active"
+                        : "status-badge inactive"
+                    }
+                  >
+                    {student.active ? "Active" : "Inactive"}
+                  </span>
+                  <span>
+                    {[student.standardName, student.sectionName]
+                      .filter(Boolean)
+                      .join(" - ")}
+                  </span>
+                  <span>{student.academicYear || "-"}</span>
+                </div>
+              )}
+            </div>
+            <button
+              aria-label="Close student profile"
+              onClick={onClose}
+              type="button"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </header>
+
+        <div style={{ flex: "1 1 auto", overflowY: "auto", padding: 20 }}>
+          <ProfileSectionCard
+            count={data.basic ? 1 : 0}
+            className="student-profile-basic-card"
+            hideCount
+            error={statuses.basic.error}
+            isLoading={statuses.basic.loading}
+            onRetry={() => onRetry("basic")}
+            title="Basic Information"
+          >
+            {data.basic && (
+              <dl className="student-profile-basic-grid">
+                <BasicInformationField
+                  label="Admission No"
+                  value={data.basic.admissionNumber}
+                />
+                <BasicInformationField
+                  label="Full Name"
+                  value={getStudentName(data.basic)}
+                />
+                <BasicInformationField
+                  label="DOB"
+                  value={formatProfileDate(data.basic.dateOfBirth)}
+                />
+                <BasicInformationField
+                  label="Gender"
+                  value={data.basic.gender}
+                />
+                <BasicInformationField
+                  label="Blood Group"
+                  value={data.basic.bloodGroup}
+                />
+                <BasicInformationField
+                  label="Academic Year"
+                  value={data.basic.academicYear}
+                />
+                <BasicInformationField
+                  label="Standard"
+                  value={data.basic.standardName}
+                />
+                <BasicInformationField
+                  label="Section"
+                  value={data.basic.sectionName}
+                />
+                <div className="student-profile-basic-field">
+                  <dt>Status</dt>
+                  <dd>
+                    <span
+                      className={`student-profile-basic-status ${data.basic.active ? "active" : "inactive"}`}
+                    >
+                      {data.basic.active ? "Active" : "Inactive"}
+                    </span>
+                  </dd>
+                </div>
+              </dl>
+            )}
+          </ProfileSectionCard>
+
+          <ProfileSectionCard
+            count={data.marks.length}
+            error={statuses.marks.error}
+            isLoading={statuses.marks.loading}
+            onRetry={() => onRetry("marks")}
+            title="Marks"
+          >
+            <ProfileTable headers={["Exam", "Subject", "Total", "Obtained"]}>
+              {data.marks.map((mark) => (
+                <tr key={mark.id}>
+                  <td>{mark.examName}</td>
+                  <td>{mark.subjectName}</td>
+                  <td>{mark.totalMarks}</td>
+                  <td>{mark.marksObtained}</td>
+                </tr>
+              ))}
+            </ProfileTable>
+          </ProfileSectionCard>
+
+          <ProfileSectionCard
+            count={data.performance.length}
+            error={statuses.performance.error}
+            isLoading={statuses.performance.loading}
+            onRetry={() => onRetry("performance")}
+            title="Performance Summary"
+          >
+            <ProfileTable
+              headers={["Exam", "Total", "Obtained", "%", "Grade", "Result"]}
+            >
+              {data.performance.map((summary) => (
+                <tr key={summary.id}>
+                  <td>{summary.examName}</td>
+                  <td>{summary.totalMarks}</td>
+                  <td>{summary.marksObtained}</td>
+                  <td>{summary.percentage}%</td>
+                  <td>{summary.grade}</td>
+                  <td>
+                    <span
+                      className={
+                        summary.resultStatus.toUpperCase() === "PASS"
+                          ? "status-badge active"
+                          : "status-badge inactive"
+                      }
+                    >
+                      {summary.resultStatus}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </ProfileTable>
+          </ProfileSectionCard>
+
+          <ProfileSectionCard
+            count={data.activities.length}
+            error={statuses.activities.error}
+            isLoading={statuses.activities.loading}
+            onRetry={() => onRetry("activities")}
+            title="Activities"
+          >
+            <ProfileTable
+              headers={["Activity", "Participation Date", "Remarks"]}
+            >
+              {data.activities.map((activity) => (
+                <tr key={activity.id}>
+                  <td>{activity.activityName}</td>
+                  <td>{formatDate(activity.participationDate)}</td>
+                  <td>{activity.remarks || "-"}</td>
+                </tr>
+              ))}
+            </ProfileTable>
+          </ProfileSectionCard>
+
+          <ProfileSectionCard
+            count={data.discipline.length}
+            error={statuses.discipline.error}
+            isLoading={statuses.discipline.loading}
+            onRetry={() => onRetry("discipline")}
+            title="Disciplinary Records"
+          >
+            <ProfileTable
+              headers={[
+                "Incident Date",
+                "Type",
+                "Description",
+                "Action Taken",
+                "Remarks",
+                "Resolved",
+                "Recorded Date",
+              ]}
+            >
+              {data.discipline.map((record) => (
+                <tr key={record.id}>
+                  <td>{formatDate(record.incidentDate)}</td>
+                  <td>{record.incidentType}</td>
+                  <td>{record.description}</td>
+                  <td>{record.actionTaken}</td>
+                  <td>{record.remarks || "-"}</td>
+                  <td>
+                    <span
+                      className={
+                        record.resolved
+                          ? "status-badge active"
+                          : "status-badge inactive"
+                      }
+                    >
+                      {record.resolved ? "Resolved" : "Unresolved"}
+                    </span>
+                  </td>
+                  <td>
+                    {record.recordedDate
+                      ? formatDate(record.recordedDate)
+                      : "-"}
+                  </td>
+                </tr>
+              ))}
+            </ProfileTable>
+          </ProfileSectionCard>
+
+          <ProfileSectionCard
+            count={data.promotion.length}
+            error={statuses.promotion.error}
+            isLoading={statuses.promotion.loading}
+            onRetry={() => onRetry("promotion")}
+            title="Promotion History"
+          >
+            <ProfileTable
+              headers={["From", "To", "Promotion Date", "Status", "Remarks"]}
+            >
+              {data.promotion.map((promotion) => (
+                <tr key={promotion.id}>
+                  <td>
+                    {[
+                      promotion.fromAcademicYear,
+                      promotion.fromStandard,
+                      promotion.fromSection,
+                    ]
+                      .filter(Boolean)
+                      .join(" / ")}
+                  </td>
+                  <td>
+                    {[
+                      promotion.toAcademicYear,
+                      promotion.toStandard,
+                      promotion.toSection,
+                    ]
+                      .filter(Boolean)
+                      .join(" / ")}
+                  </td>
+                  <td>{formatDate(promotion.promotionDate)}</td>
+                  <td>{promotion.status}</td>
+                  <td>{promotion.remarks || "-"}</td>
+                </tr>
+              ))}
+            </ProfileTable>
+          </ProfileSectionCard>
+
+          <ProfileSectionCard
+            count={data.documents.length}
+            error={statuses.documents.error}
+            isLoading={statuses.documents.loading}
+            onRetry={() => onRetry("documents")}
+            title="Documents"
+          >
+            <ProfileTable headers={["Type", "Name", "Uploaded Date", "Open"]}>
+              {data.documents.map((document) => (
+                <tr
+                  key={
+                    document.id ??
+                    `${document.documentName}-${document.uploadedDate ?? ""}`
+                  }
+                >
+                  <td>{document.documentType}</td>
+                  <td>{document.documentName}</td>
+                  <td>
+                    {document.uploadedDate
+                      ? formatDate(document.uploadedDate)
+                      : "-"}
+                  </td>
+                  <td>
+                    {document.documentUrl ? (
+                      <a
+                        href={document.documentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Open
+                      </a>
+                    ) : (
+                      "-"
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </ProfileTable>
+          </ProfileSectionCard>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ProfileSectionCard({
+  title,
+  count,
+  isLoading,
+  error,
+  onRetry,
+  hideCount = false,
+  className,
+  children,
+}: {
+  title: string;
+  count: number;
+  isLoading: boolean;
+  error: string;
+  onRetry: () => void;
+  hideCount?: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      className={`panel student-profile-section-card${className ? ` ${className}` : ""}`}
+      style={{
+        marginBottom: 14,
+        padding: 16,
+        border: "1px solid var(--border)",
+        borderRadius: 10,
+        background: "var(--surface)",
+      }}
+    >
+      <div
+        className="student-profile-section-heading"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          marginBottom: 12,
+        }}
+      >
+        <h3>{title}</h3>
+        {!hideCount && (
+          <span
+            className="student-profile-count"
+            style={{
+              padding: "3px 9px",
+              borderRadius: 999,
+              color: "var(--brand-strong)",
+              background: "var(--brand-light)",
+              fontSize: 11,
+              fontWeight: 700,
+            }}
+          >
+            {count}
+          </span>
+        )}
+      </div>
+      {isLoading ? (
+        <p className="empty-state">Loading {title.toLowerCase()}...</p>
+      ) : error ? (
+        <DirectoryError
+          message={error}
+          isRetryDisabled={isLoading}
+          onRetry={onRetry}
+        />
+      ) : count === 0 ? (
+        <p className="empty-state">No {title.toLowerCase()} available.</p>
+      ) : (
+        children
+      )}
+    </section>
+  );
+}
+
+function BasicInformationField({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | undefined;
+}) {
+  return (
+    <div className="student-profile-basic-field">
+      <dt>{label}</dt>
+      <dd>{value?.trim() || "-"}</dd>
+    </div>
+  );
+}
+
+function ProfileTable({
+  headers,
+  children,
+}: {
+  headers: string[];
+  children: ReactNode;
+}) {
+  return (
+    <div className="student-detail-table-wrap">
+      <table className="teacher-table student-detail-table">
+        <thead>
+          <tr>
+            {headers.map((header) => (
+              <th key={header}>{header}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>{children}</tbody>
+      </table>
+    </div>
+  );
+}
+
+function profileSectionTitle(section: ProfileSection) {
+  const titles: Record<ProfileSection, string> = {
+    basic: "Basic Information",
+    marks: "Marks",
+    performance: "Performance Summary",
+    activities: "Activities",
+    discipline: "Disciplinary Records",
+    promotion: "Promotion History",
+    documents: "Documents",
+  };
+  return titles[section];
+}
+
+function DirectoryError({
+  message,
+  onRetry,
+  isRetryDisabled = false,
+}: {
+  message: string;
+  onRetry: () => void;
+  isRetryDisabled?: boolean;
+}) {
+  return (
+    <div className="empty-state" role="alert">
+      <p>{message}</p>
+      <button
+        className="secondary-button"
+        disabled={isRetryDisabled}
+        onClick={onRetry}
+        type="button"
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+
 function StudentForm({
   student,
   isSaving,
   onCancel,
   onSubmit,
 }: {
-  student: StudentResponse;
+  student: Student;
   isSaving: boolean;
   onCancel: () => void;
   onSubmit: (request: StudentRequest) => Promise<void>;
@@ -844,7 +1549,6 @@ function StudentForm({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const nextErrors: Record<string, string> = {};
-
     if (!values.admissionNumber.trim())
       nextErrors.admissionNumber = "Admission number is required.";
     if (!values.firstName.trim())
@@ -853,9 +1557,9 @@ function StudentForm({
     if (!values.dateOfBirth)
       nextErrors.dateOfBirth = "Date of birth is required.";
     if (!values.gender) nextErrors.gender = "Gender is required.";
-    if (!values.classSectionId || Number(values.classSectionId) <= 0)
+    if (!values.classSectionId || Number(values.classSectionId) <= 0) {
       nextErrors.classSectionId = "Class / section ID is required.";
-
+    }
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
@@ -903,7 +1607,6 @@ function StudentForm({
           </StudentField>
         </div>
       </div>
-
       <div className="student-form-section">
         <p className="eyebrow">Personal information</p>
         <div className="teacher-form-grid">
@@ -969,7 +1672,6 @@ function StudentForm({
           </StudentField>
         </div>
       </div>
-
       <div className="student-form-section">
         <p className="eyebrow">Status</p>
         <div className="teacher-form-grid">
@@ -986,7 +1688,6 @@ function StudentForm({
           </StudentField>
         </div>
       </div>
-
       <div className="form-actions">
         <button className="secondary-button" onClick={onCancel} type="button">
           Cancel
@@ -1008,20 +1709,19 @@ function StudentField({
   error?: string;
   children: ReactNode;
 }) {
+  const requiredLabels = [
+    "Admission Number",
+    "Class / Section ID",
+    "First Name",
+    "Last Name",
+    "Date of Birth",
+    "Gender",
+  ];
   return (
     <label className="teacher-field student-field">
       <span>
         {label}
-        {[
-          "Admission Number",
-          "Class / Section ID",
-          "First Name",
-          "Last Name",
-          "Date of Birth",
-          "Gender",
-        ].includes(label)
-          ? " *"
-          : ""}
+        {requiredLabels.includes(label) ? " *" : ""}
       </span>
       {children}
       {error && <small className="field-error">{error}</small>}
@@ -1029,422 +1729,7 @@ function StudentField({
   );
 }
 
-function StudentDetailsModal({
-  student,
-  address,
-  documents,
-  admission,
-  fees,
-  paymentsByFeeId,
-  isLoading,
-  onClose,
-}: {
-  student: StudentResponse;
-  address: AddressRecord | null;
-  documents: DocumentRecord[];
-  admission: StudentAdmissionRecord | null;
-  fees: StudentFee[];
-  paymentsByFeeId: Map<number, FeePayment[]>;
-  isLoading: boolean;
-  onClose: () => void;
-}) {
-  return (
-    <div className="dialog-backdrop" role="presentation">
-      <section
-        aria-labelledby="student-details-title"
-        className="dialog-card student-details-card"
-        role="dialog"
-      >
-        <div className="dialog-heading">
-          <div>
-            <p className="eyebrow">Student details</p>
-            <h2 id="student-details-title">{getStudentName(student)}</h2>
-            <p className="dialog-copy">
-              {student.admissionNumber} •{" "}
-              {student.active ? "Active" : "Inactive"}
-            </p>
-          </div>
-          <button
-            aria-label="Close student details"
-            onClick={onClose}
-            type="button"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {isLoading ? (
-          <p className="empty-state">Loading student details...</p>
-        ) : (
-          <>
-            <div className="student-detail-section">
-              <p className="eyebrow">Personal information</p>
-              <dl className="teacher-details-grid">
-                <Detail label="Student ID" value={String(student.id)} />
-                <Detail
-                  label="Admission Number"
-                  value={student.admissionNumber}
-                />
-                <Detail label="First Name" value={student.firstName} />
-                <Detail label="Middle Name" value={student.middleName || "-"} />
-                <Detail label="Last Name" value={student.lastName} />
-                <Detail label="Full Name" value={getStudentName(student)} />
-                <Detail
-                  label="Date of Birth"
-                  value={formatDate(student.dateOfBirth)}
-                />
-                <Detail label="Gender" value={student.gender} />
-                <Detail label="Blood Group" value={student.bloodGroup || "-"} />
-                <Detail
-                  label="Active Status"
-                  value={student.active ? "Active" : "Inactive"}
-                />
-              </dl>
-            </div>
-
-            <div className="student-detail-section">
-              <p className="eyebrow">Academic information</p>
-              <dl className="teacher-details-grid">
-                <Detail
-                  label="Academic Year"
-                  value={
-                    student.academicYear ||
-                    resolveAdmissionValue(admission, "academicYear") ||
-                    "-"
-                  }
-                />
-                <Detail
-                  label="Standard"
-                  value={
-                    student.standardName ||
-                    resolveAdmissionValue(admission, "standard") ||
-                    "-"
-                  }
-                />
-                <Detail
-                  label="Division / Section"
-                  value={
-                    student.sectionName ||
-                    resolveAdmissionValue(admission, "classSection") ||
-                    "-"
-                  }
-                />
-                <Detail
-                  label="Class Section ID"
-                  value={
-                    student.classSectionId
-                      ? String(student.classSectionId)
-                      : "-"
-                  }
-                />
-                <Detail
-                  label="Class Section Status"
-                  value={student.active ? "Active" : "Inactive"}
-                />
-              </dl>
-            </div>
-
-            <div className="student-detail-section">
-              <p className="eyebrow">Address</p>
-              {address ? (
-                <dl className="teacher-details-grid">
-                  <Detail
-                    label="Address Line"
-                    value={address.addressLine || "-"}
-                  />
-                  <Detail label="City" value={address.city || "-"} />
-                  <Detail label="State" value={address.state || "-"} />
-                  <Detail
-                    label="Postal Code"
-                    value={address.postalCode || "-"}
-                  />
-                  <Detail label="Country" value={address.country || "-"} />
-                </dl>
-              ) : (
-                <p className="empty-state">No address information available.</p>
-              )}
-            </div>
-
-            <div className="student-detail-section">
-              <p className="eyebrow">Documents</p>
-              {documents.length === 0 ? (
-                <p className="empty-state">No documents available.</p>
-              ) : (
-                <div className="student-detail-table-wrap">
-                  <table className="teacher-table student-detail-table">
-                    <thead>
-                      <tr>
-                        <th>Document Type</th>
-                        <th>Document Name</th>
-                        <th>Document URL</th>
-                        <th>Uploaded Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {documents.map((document) => (
-                        <tr
-                          key={
-                            document.id ??
-                            `${document.documentName}-${document.uploadedDate}`
-                          }
-                        >
-                          <td>{document.documentType || "-"}</td>
-                          <td>{document.documentName || "-"}</td>
-                          <td>
-                            {document.documentUrl ? (
-                              <a
-                                href={document.documentUrl}
-                                rel="noreferrer"
-                                target="_blank"
-                              >
-                                View
-                              </a>
-                            ) : (
-                              "-"
-                            )}
-                          </td>
-                          <td>
-                            {document.uploadedDate
-                              ? formatDate(document.uploadedDate)
-                              : "-"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            <div className="student-detail-section">
-              <p className="eyebrow">Admission</p>
-              {admission ? (
-                <dl className="teacher-details-grid">
-                  <Detail
-                    label="Admission ID"
-                    value={admission.id ? String(admission.id) : "-"}
-                  />
-                  <Detail
-                    label="Academic Year"
-                    value={
-                      resolveAdmissionValue(admission, "academicYear") || "-"
-                    }
-                  />
-                  <Detail
-                    label="Standard"
-                    value={resolveAdmissionValue(admission, "standard") || "-"}
-                  />
-                  <Detail
-                    label="Class / Division"
-                    value={
-                      resolveAdmissionValue(admission, "classSection") || "-"
-                    }
-                  />
-                  <Detail
-                    label="Admission Date"
-                    value={
-                      admission.admissionDate
-                        ? formatDate(admission.admissionDate)
-                        : "-"
-                    }
-                  />
-                  <Detail
-                    label="Admission Status"
-                    value={admission.admissionStatus || "-"}
-                  />
-                  <Detail label="Remarks" value={admission.remarks || "-"} />
-                </dl>
-              ) : (
-                <p className="empty-state">
-                  No admission information available.
-                </p>
-              )}
-            </div>
-
-            <div className="student-detail-section">
-              <p className="eyebrow">Fees</p>
-              {fees.length === 0 ? (
-                <p className="empty-state">No fee records available.</p>
-              ) : (
-                <div className="student-detail-table-wrap">
-                  <table className="teacher-table student-detail-table">
-                    <thead>
-                      <tr>
-                        <th>Fee Type</th>
-                        <th>Amount</th>
-                        <th>Academic Year</th>
-                        <th>Due Date</th>
-                        <th>Status</th>
-                        <th>Remarks</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {fees.map((fee) => (
-                        <tr key={fee.id ?? `${fee.feeType}-${fee.dueDate}`}>
-                          <td>{fee.feeType || "-"}</td>
-                          <td>
-                            {fee.amount
-                              ? `₹ ${Number(fee.amount).toLocaleString("en-IN")}`
-                              : "-"}
-                          </td>
-                          <td>{student.academicYear || "-"}</td>
-                          <td>{fee.dueDate ? formatDate(fee.dueDate) : "-"}</td>
-                          <td>{fee.status || "-"}</td>
-                          <td>{fee.remarks || "-"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            <div className="student-detail-section">
-              <p className="eyebrow">Payments</p>
-              {fees.length === 0 ? (
-                <p className="empty-state">No payment records available.</p>
-              ) : (
-                fees.map((fee) => {
-                  const payments = fee.id
-                    ? (paymentsByFeeId.get(fee.id) ?? [])
-                    : [];
-                  return (
-                    <div
-                      key={fee.id ?? `${fee.feeType}-payments`}
-                      className="student-payment-block"
-                    >
-                      <h4>{fee.feeType || "Fee"}</h4>
-                      {payments.length === 0 ? (
-                        <p className="empty-state">
-                          No payment records available.
-                        </p>
-                      ) : (
-                        <div className="student-detail-table-wrap">
-                          <table className="teacher-table student-detail-table">
-                            <thead>
-                              <tr>
-                                <th>Payment Date</th>
-                                <th>Amount Paid</th>
-                                <th>Payment Method</th>
-                                <th>Transaction Reference</th>
-                                <th>Receipt Number</th>
-                                <th>Remarks</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {payments.map((payment) => (
-                                <tr
-                                  key={
-                                    payment.id ??
-                                    `${payment.receiptNumber ?? "payment"}-${payment.paymentDate}`
-                                  }
-                                >
-                                  <td>
-                                    {payment.paymentDate
-                                      ? formatDate(payment.paymentDate)
-                                      : "-"}
-                                  </td>
-                                  <td>
-                                    {payment.amountPaid
-                                      ? `₹ ${Number(payment.amountPaid).toLocaleString("en-IN")}`
-                                      : "-"}
-                                  </td>
-                                  <td>{payment.paymentMethod || "-"}</td>
-                                  <td>{payment.transactionReference || "-"}</td>
-                                  <td>{payment.receiptNumber || "-"}</td>
-                                  <td>{payment.remarks || "-"}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </>
-        )}
-      </section>
-    </div>
-  );
-}
-
-function DeleteStudentDialog({
-  student,
-  isDeleting,
-  onCancel,
-  onConfirm,
-}: {
-  student: StudentResponse;
-  isDeleting: boolean;
-  onCancel: () => void;
-  onConfirm: () => Promise<void>;
-}) {
-  return (
-    <div className="dialog-backdrop" role="presentation">
-      <section
-        aria-labelledby="delete-student-title"
-        className="dialog-card compact-dialog"
-        role="dialog"
-      >
-        <div className="dialog-heading">
-          <div>
-            <p className="eyebrow">Delete student</p>
-            <h2 id="delete-student-title">Delete Student?</h2>
-          </div>
-          <button
-            aria-label="Close confirmation"
-            onClick={onCancel}
-            type="button"
-          >
-            <X size={18} />
-          </button>
-        </div>
-        <p className="dialog-copy">
-          Are you sure you want to delete {getStudentName(student)}? This action
-          cannot be undone.
-        </p>
-        <div className="form-actions">
-          <button className="secondary-button" onClick={onCancel} type="button">
-            Cancel
-          </button>
-          <button
-            className="delete-button"
-            disabled={isDeleting}
-            onClick={() => void onConfirm()}
-            type="button"
-          >
-            {isDeleting ? "Deleting..." : "Delete Student"}
-          </button>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function Detail({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt>{label}</dt>
-      <dd>{value}</dd>
-    </div>
-  );
-}
-
-function resolveAdmissionValue(
-  admission: StudentAdmissionRecord | null,
-  key: "academicYear" | "standard" | "classSection",
-) {
-  if (!admission) return "";
-
-  if (key === "academicYear") return admission.academicYear ?? "";
-  if (key === "standard") return admission.standardName ?? "";
-  return admission.sectionName ?? "";
-}
-
-function getFormState(student: StudentResponse): StudentFormState {
+function getFormState(student: Student): StudentFormState {
   return {
     admissionNumber: student.admissionNumber ?? "",
     firstName: student.firstName ?? "",
@@ -1458,13 +1743,19 @@ function getFormState(student: StudentResponse): StudentFormState {
   };
 }
 
-function getStudentName(student: StudentResponse) {
+function getStudentName(student: Student) {
   return [student.firstName, student.middleName, student.lastName]
-    .filter(Boolean)
+    .map((name) => name?.trim())
+    .filter((name): name is string => Boolean(name))
     .join(" ");
 }
 
-function getInitials(student: StudentResponse) {
+function selectedSectionTitle(standardName: string | undefined, sectionName: string | undefined) {
+  if (!standardName || !sectionName) return "Student List";
+  return `${standardName} Standard - Section ${sectionName}`;
+}
+
+function getInitials(student: Student) {
   return `${student.firstName?.[0] ?? ""}${student.lastName?.[0] ?? ""}`.toUpperCase();
 }
 
@@ -1475,38 +1766,44 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-GB").format(date);
 }
 
-function normalizeList<T>(value: unknown): T[] {
-  return Array.isArray(value) ? (value as T[]) : [];
+function formatProfileDate(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (match) return `${match[3]}/${match[2]}/${match[1]}`;
+  return value ? formatDate(value) : "-";
 }
 
-function sortStandards(standards: StandardWithDisplayOrder[]) {
-  if (!standards.every((standard) => typeof standard.displayOrder === "number")) {
-    return standards;
-  }
-  return [...standards].sort(
-    (first, second) => first.displayOrder! - second.displayOrder!,
-  );
+function sortStandards(standards: DirectoryStandard[]) {
+  return standards
+    .map((standard, index) => ({ standard, index }))
+    .sort((first, second) => {
+      const firstOrder = first.standard.displayOrder;
+      const secondOrder = second.standard.displayOrder;
+      if (typeof firstOrder === "number" && typeof secondOrder === "number")
+        return firstOrder - secondOrder;
+      if (typeof firstOrder === "number") return -1;
+      if (typeof secondOrder === "number") return 1;
+      return first.index - second.index;
+    })
+    .map(({ standard }) => standard);
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (!axios.isAxiosError(error))
     return error instanceof Error ? error.message : fallback;
-  const responseData = error.response?.data;
+  const responseData: unknown = error.response?.data;
   if (typeof responseData === "string" && responseData.trim())
     return responseData;
   if (responseData && typeof responseData === "object") {
     const message =
-      responseData.message ?? responseData.error ?? responseData.detail;
+      Reflect.get(responseData, "message") ??
+      Reflect.get(responseData, "error") ??
+      Reflect.get(responseData, "detail");
     if (typeof message === "string" && message.trim()) return message;
   }
-  if (error.response?.status === 401)
-    return "Your session has expired. Please login again.";
   if (error.response?.status === 403)
-    return "You do not have permission to view students.";
-  if (error.response?.status === 404)
-    return "The students endpoint was not found.";
+    return "You do not have permission to perform this action.";
   if (error.response?.status && error.response.status >= 500)
-    return "Unable to load students. Please try again.";
-  if (!error.response) return "Unable to connect to the server.";
+    return "The server could not complete this request.";
+  if (!error.response) return "Unable to reach the server. Please try again.";
   return fallback;
 }
