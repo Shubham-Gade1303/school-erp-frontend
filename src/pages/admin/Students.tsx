@@ -17,6 +17,7 @@ import {
   type ReactNode,
 } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { DocumentDownloadButton } from "../../components/DocumentDownloadButton";
 import {
   getAcademicYears,
   getClassSections,
@@ -33,6 +34,7 @@ import {
   getStudentsByClassSection,
   updateStudent,
 } from "../../services/studentService";
+import { normalizeList } from "../admission/utils/format";
 import type {
   AcademicYear,
   ClassSection,
@@ -215,7 +217,7 @@ export function StudentsPage() {
     try {
       const response = await getAcademicYears();
       if (requestId !== academicYearsRequestId.current) return;
-      const years = response.data;
+      const years = normalizeList<AcademicYear>(response.data);
       setAcademicYears(years);
       const nextYearId = years.some((year) => year.id === academicYearId)
         ? academicYearId
@@ -248,7 +250,9 @@ export function StudentsPage() {
     try {
       const response = await getStandards();
       if (requestId !== standardsRequestId.current) return;
-      const sortedStandards = sortStandards(response.data);
+      const sortedStandards = sortStandards(
+        normalizeList<DirectoryStandard>(response.data),
+      );
       setStandards(sortedStandards);
       const hasSelectedStandard = sortedStandards.some(
         (standard) => standard.id === selectedStandardId,
@@ -285,7 +289,7 @@ export function StudentsPage() {
       const response = await getClassSections(yearId, standardId);
       if (requestId !== sectionsRequestId.current) return;
       setSections(
-        response.data.filter(
+        normalizeList<ActiveClassSection>(response.data).filter(
           (section) => !("active" in section) || section.active !== false,
         ),
       );
@@ -311,7 +315,7 @@ export function StudentsPage() {
     try {
       const response = await getStudentsByClassSection(classSectionId);
       if (requestId !== studentsRequestId.current) return;
-      setStudents(response.data);
+      setStudents(normalizeList<Student>(response.data));
       setPage(1);
     } catch (loadError) {
       if (requestId !== studentsRequestId.current) return;
@@ -1338,28 +1342,22 @@ function StudentProfileModal({
                 <tr
                   key={
                     document.id ??
-                    `${document.documentName}-${document.uploadedDate ?? ""}`
+                    `${document.fileName}-${document.uploadedAt ?? ""}`
                   }
                 >
                   <td>{document.documentType}</td>
-                  <td>{document.documentName}</td>
+                  <td>{document.fileName}</td>
                   <td>
-                    {document.uploadedDate
-                      ? formatDate(document.uploadedDate)
+                    {document.uploadedAt
+                      ? formatDate(document.uploadedAt)
                       : "-"}
                   </td>
                   <td>
-                    {document.documentUrl ? (
-                      <a
-                        href={document.documentUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Open
-                      </a>
-                    ) : (
-                      "-"
-                    )}
+                    <DocumentDownloadButton
+                      documentId={document.id}
+                      fileName={document.fileName}
+                      label="Open"
+                    />
                   </td>
                 </tr>
               ))}

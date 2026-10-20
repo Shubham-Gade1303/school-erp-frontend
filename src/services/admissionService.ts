@@ -5,6 +5,7 @@ import type {
   AddressRecord,
   ClassSection,
   DocumentRecord,
+  DocumentType,
   FeePayment,
   Standard,
   StudentAdmissionRequest,
@@ -36,10 +37,67 @@ export const updateStudentAddress = (id: number, data: AddressRecord) =>
   axiosClient.put<AddressRecord>(`/student-addresses/${id}`, data);
 export const getStudentDocuments = (studentId: number) =>
   axiosClient.get<DocumentRecord[]>(`/documents/student/${studentId}`);
-export const createDocument = (data: DocumentRecord) =>
-  axiosClient.post<DocumentRecord>("/documents", data);
-export const updateDocument = (id: number, data: DocumentRecord) =>
+export const createDocument = (
+  data: { studentId: number; documentType: DocumentType },
+  file: File,
+  onUploadProgress: (progress: number) => void,
+) => {
+  const formData = new FormData();
+  formData.append("studentId", String(data.studentId));
+  formData.append("documentType", data.documentType);
+  formData.append("file", file);
+  return axiosClient.post<DocumentRecord>("/documents", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+    onUploadProgress: (event) => {
+      if (event.total) {
+        onUploadProgress(
+          Math.min(100, Math.round((event.loaded / event.total) * 100)),
+        );
+      }
+    },
+  });
+};
+export const updateDocument = (
+  id: number,
+  data: { studentId: number; documentType: DocumentType },
+) =>
   axiosClient.put<DocumentRecord>(`/documents/${id}`, data);
+export const replaceDocumentFile = (
+  id: number,
+  file: File,
+  onUploadProgress: (progress: number) => void,
+) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return axiosClient.put<DocumentRecord>(
+    `/documents/${id}/file`,
+    formData,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+      onUploadProgress: (event) => {
+        if (event.total) {
+          onUploadProgress(
+            Math.min(100, Math.round((event.loaded / event.total) * 100)),
+          );
+        }
+      },
+    },
+  );
+};
+export async function downloadDocumentFile(id: number, fileName: string) {
+  const response = await axiosClient.get<Blob>(`/documents/${id}/download`, {
+    responseType: "blob",
+  });
+  const objectUrl = URL.createObjectURL(response.data);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = fileName;
+  link.style.display = "none";
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+}
 export const deleteDocument = (id: number) =>
   axiosClient.delete<void>(`/documents/${id}`);
 export const getStudentFees = (studentId: number, academicYearId: number) =>

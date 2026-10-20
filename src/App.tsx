@@ -29,6 +29,7 @@ import { StudentsPage } from "./pages/admin/Students";
 import { AdmissionPage } from "./pages/admission/AdmissionPage";
 import { AcademicYearsPage } from "./pages/admission/AcademicYearsPage";
 import { AttendancePage } from "./pages/AttendancePage";
+import { ExamsPage } from "./pages/ExamsPage";
 import type { DashboardData, UserRole } from "./types/api";
 import { getAttendanceByDate } from "./services/attendanceService";
 import { getAllStudents } from "./services/studentService";
@@ -69,7 +70,7 @@ function App() {
             <Route path="teachers" element={<TeachersPage />} />
             <Route path="subjects" element={<FeaturePage title="Subjects" />} />
             <Route path="attendance" element={<AttendancePage />} />
-            <Route path="exams" element={<FeaturePage title="Exams" />} />
+            <Route path="exams" element={<ExamsPage />} />
             <Route path="results" element={<FeaturePage title="Results" />} />
             <Route path="fees" element={<FeaturePage title="Fees" />} />
             <Route path="users" element={<FeaturePage title="Users" />} />
@@ -85,7 +86,7 @@ function App() {
             <Route path="teachers" element={<FeaturePage title="Teachers" />} />
             <Route path="subjects" element={<FeaturePage title="Subjects" />} />
             <Route path="attendance" element={<AttendancePage />} />
-            <Route path="exams" element={<FeaturePage title="Exams" />} />
+            <Route path="exams" element={<ExamsPage />} />
             <Route path="results" element={<FeaturePage title="Results" />} />
             <Route path="reports" element={<FeaturePage title="Reports" />} />
             <Route path="settings" element={<FeaturePage title="Settings" />} />
@@ -106,7 +107,7 @@ function App() {
             />
             <Route
               path="exams"
-              element={<TeacherFeatureRoute title="Exams" />}
+              element={<ExamsPage />}
             />
             <Route
               path="results"
@@ -682,7 +683,7 @@ function StatCard({
   return (
     <article className="stat-card">
       <div className={`stat-icon ${tone}`}>{icon}</div>
-      <div>
+      <div className="stat-card-copy">
         <span>{label}</span>
         <strong>{value}</strong>
         <small>

@@ -12,6 +12,7 @@ import {
   getClassSections,
   getFeePayments,
   getStandards,
+  replaceDocumentFile,
   updateDocument,
   updateFeePayment,
   updateStudentAddress,
@@ -28,6 +29,7 @@ import type {
   ClassSection,
   DocumentDraft,
   DocumentRecord,
+  DocumentType,
   FeePayment,
   Standard,
   StudentAdmissionRequest,
@@ -35,7 +37,7 @@ import type {
 } from "../../../types/admission";
 import type { StudentRequest, StudentResponse } from "../../../types/student";
 import { getErrorMessage, normalizeList } from "../utils/format";
-import { uploadDocumentToCloudinary } from "../../../services/cloudinaryService";
+import { DOCUMENT_TYPES } from "../../../types/admission";
 
 export type StudentFormValues = {
   admissionNumber: string;
@@ -99,6 +101,10 @@ const emptyStudentForm = (): StudentFormValues => ({
 const allowedGenders = ["Male", "Female", "Other"];
 const allowedBloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
+function isDocumentType(value: string): value is DocumentType {
+  return DOCUMENT_TYPES.some((type) => type === value);
+}
+
 function getTodayDate() {
   const today = new Date();
   const localDate = new Date(
@@ -154,6 +160,7 @@ export function useAdmissionWorkflow() {
 
   const sectionsRequestId = useRef(0);
   const paymentsRequestId = useRef(0);
+  const savingRef = useRef(false);
   const admissionNumberCheckTimer = useRef<
     ReturnType<typeof window.setTimeout> | undefined
   >(undefined);
@@ -393,6 +400,8 @@ export function useAdmissionWorkflow() {
     operation: () => Promise<void>,
     handleError?: (error: unknown) => boolean,
   ) {
+    if (savingRef.current) return false;
+    savingRef.current = true;
     setSaving(true);
     setError("");
     try {
@@ -404,6 +413,7 @@ export function useAdmissionWorkflow() {
       }
       return false;
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
@@ -532,27 +542,35 @@ export function useAdmissionWorkflow() {
     runSave(async () => {
       const draft = documentsDraft;
       if (!draft) return;
-      if (
-        !draft.documentType ||
-        (!draft.id && !draft.file) ||
-        (!draft.file && !draft.documentUrl)
-      ) {
-        throw new Error(
-          "Choose a document type and upload a file before saving.",
+      if (!isDocumentType(draft.documentType)) {
+        throw new Error("Choose a valid document type before saving.");
+      }
+      let response;
+      if (draft.id && draft.file) {
+        response = await replaceDocumentFile(
+          draft.id,
+          draft.file,
+          onUploadProgress,
+        );
+      } else if (draft.id) {
+        response = await updateDocument(draft.id, {
+          studentId: draft.studentId,
+          documentType: draft.documentType,
+        });
+      } else {
+        if (!draft.file) {
+          throw new Error("Choose a file before saving.");
+        }
+        response = await createDocument(
+          {
+            studentId: draft.studentId,
+            documentType: draft.documentType,
+          },
+          draft.file,
+          onUploadProgress,
         );
       }
-      const { file, ...documentData } = draft;
-      const documentUrl = file
-        ? await uploadDocumentToCloudinary(file, onUploadProgress)
-        : documentData.documentUrl;
-      const request: DocumentRecord = {
-        ...documentData,
-        documentName: file?.name ?? documentData.documentName,
-        documentUrl,
-      };
-      const response = draft.id
-        ? await updateDocument(draft.id, request)
-        : await createDocument(request);
+      if (draft.file) onUploadProgress(100);
       setWorkflow((current) => ({
         ...current,
         documents: current.documents.some(

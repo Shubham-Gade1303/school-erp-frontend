@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import { DocumentDownloadButton } from "../../../components/DocumentDownloadButton";
 import type {
   AcademicYear,
   AddressRecord,
@@ -68,10 +69,14 @@ export function ReviewStep({
       ] : [["Address", "-"]]} />
       <ReviewSection title="Documents" items={documents.length
         ? documents.map((document) => [
-            document.documentName,
-            <span className="review-document-links" key={document.id ?? document.documentName}>
+            document.fileName,
+            <span className="review-document-links" key={document.id}>
               <span>{document.documentType}</span>
-              {document.documentUrl && <a href={document.documentUrl} rel="noopener noreferrer" target="_blank">View</a>}
+              <DocumentDownloadButton
+                documentId={document.id}
+                fileName={document.fileName}
+                label="View"
+              />
             </span>,
           ])
         : [["Documents", "None added"]]} />

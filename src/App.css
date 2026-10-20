@@ -1882,13 +1882,23 @@
 }
 
 .login-shell {
-  min-height: 100vh;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
   display: grid;
-  grid-template-columns: minmax(420px, 1fr) minmax(480px, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  overflow: hidden;
   background: #f7f8fc;
+}
+#root:has(.login-shell) {
+  min-height: 0;
 }
 .login-brand-panel {
   position: relative;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1972,6 +1982,7 @@
   text-transform: uppercase;
 }
 .login-form-panel {
+  min-width: 0;
   display: grid;
   place-items: center;
   padding: 48px;
@@ -2123,58 +2134,80 @@
 }
 @media (max-width: 900px) {
   .login-shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
   }
   .login-brand-panel {
-    min-height: 440px;
-    padding: 52px 10vw;
+    padding: 32px;
   }
   .school-illustration {
-    height: 150px;
-    margin-bottom: 22px;
+    height: 130px;
+    margin-bottom: 20px;
   }
   .login-brand-panel h1 {
-    font-size: clamp(34px, 7vw, 52px);
-  }
-  .brand-panel-footer {
-    bottom: 22px;
+    font-size: clamp(30px, 4vw, 42px);
   }
   .login-form-panel {
-    min-height: 620px;
-    padding: 52px 24px;
+    padding: 32px 24px;
+  }
+}
+@media (max-width: 700px) {
+  .login-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .login-brand-panel {
+    display: none;
+  }
+  .login-form-panel {
+    padding: 24px;
   }
 }
 @media (max-width: 520px) {
-  .login-brand-panel {
-    min-height: 410px;
-    padding: 34px 24px 58px;
-  }
-  .school-illustration {
-    height: 120px;
-  }
-  .school-illustration svg {
-    width: 58px;
-  }
-  .school-kicker {
-    font-size: 11px;
-  }
-  .login-brand-panel h1 {
-    font-size: 34px;
-  }
-  .school-description {
-    margin-top: 15px;
-    font-size: 14px;
-  }
-  .school-stats {
-    margin-top: 22px;
-    gap: 14px;
-    font-size: 11px;
-  }
   .login-form-panel {
-    padding: 42px 22px;
+    padding: 20px;
+  }
+  .login-icon {
+    margin-bottom: 20px;
   }
   .login-card h2 {
     font-size: 32px;
+  }
+  .login-intro {
+    margin-bottom: 24px;
+  }
+  .support-copy {
+    margin-top: 24px;
+  }
+}
+@media (max-height: 650px) {
+  .login-form-panel {
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+  .login-icon {
+    width: 46px;
+    height: 46px;
+    margin-bottom: 14px;
+  }
+  .login-intro {
+    margin-bottom: 18px;
+  }
+  .form-field {
+    margin-top: 14px;
+  }
+  .input-wrap,
+  .login-submit {
+    height: 46px;
+  }
+  .form-options {
+    margin-bottom: 18px;
+  }
+  .support-copy {
+    margin-top: 18px;
+  }
+}
+@media (max-height: 480px) {
+  .support-copy {
+    display: none;
   }
 }
 
@@ -2955,8 +2988,8 @@
 
 .dashboard-stats-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: var(--dashboard-grid-gap);
+  grid-template-rows: repeat(2, minmax(104px, 1fr));
+  gap: 8px;
   min-width: 0;
   margin: 0;
 }
@@ -2966,8 +2999,8 @@
   min-width: 0;
   min-height: 0;
   height: 100%;
-  gap: var(--dashboard-grid-gap);
-  padding: var(--dashboard-card-padding);
+  gap: 8px;
+  padding: 10px 12px;
   border-radius: var(--dashboard-section-radius);
 }
 
@@ -2983,6 +3016,7 @@
 }
 
 .dashboard-stats-grid .stat-card-copy {
+  flex: 1;
   min-width: 0;
   overflow: hidden;
 }
@@ -3194,13 +3228,13 @@
   width: 100%;
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1201px) {
   .dashboard-top-row {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 
-@media (min-width: 900px) and (max-width: 1199px) {
+@media (min-width: 768px) and (max-width: 1200px) {
   .dashboard-top-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -3210,7 +3244,7 @@
   }
 }
 
-@media (max-width: 899px) {
+@media (max-width: 767px) {
   .dashboard-top-row {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -3218,7 +3252,7 @@
 
 @media (max-width: 480px) {
   .dashboard-stats-grid {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(104px, 1fr));
   }
 }

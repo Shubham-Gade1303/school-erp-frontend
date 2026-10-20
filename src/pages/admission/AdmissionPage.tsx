@@ -40,7 +40,6 @@ export function AdmissionPage() {
     fees,
     payments,
     documentsDraft,
-    setDocumentsDraft,
     feeDraft,
     setFeeDraft,
     paymentDraft,
@@ -228,18 +227,11 @@ export function AdmissionPage() {
             documents={workflow.documents}
             draft={documentsDraft}
             saving={saving}
-            onDraft={setDocumentsDraft}
-            onSave={(onUploadProgress) => {
-              if (
-                documentsDraft
-                && !documentsDraft.file
-                && documentsDraft.documentUrl.length > 500
-              ) {
-                setError("Document URL must be 500 characters or fewer.");
-                return;
-              }
-              void saveDocument(onUploadProgress);
+            onDraft={(draft) => {
+              admission.setDocumentsDraft(draft);
+              setError("");
             }}
+            onSave={(onUploadProgress) => saveDocument(onUploadProgress)}
             onRemove={(document) => void removeDocument(document)}
           />
         )}

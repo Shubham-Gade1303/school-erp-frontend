@@ -37,16 +37,41 @@ export interface AddressRecord {
   country: string;
 }
 
+export const DOCUMENT_TYPES = [
+  "BIRTH_CERTIFICATE",
+  "IDENTITY_PROOF",
+  "ADDRESS_PROOF",
+  "TRANSFER_CERTIFICATE",
+  "PREVIOUS_MARKSHEET",
+  "CASTE_CERTIFICATE",
+  "INCOME_CERTIFICATE",
+  "MEDICAL_CERTIFICATE",
+  "PASSPORT_PHOTO",
+  "OTHER",
+] as const;
+
+export type DocumentType = (typeof DOCUMENT_TYPES)[number];
+
 export interface DocumentRecord {
-  id?: number;
+  id: number;
   studentId: number;
-  documentType: string;
-  documentName: string;
-  documentUrl: string;
-  uploadedDate?: string;
+  documentType: DocumentType;
+  fileName: string;
+  contentType: string;
+  fileSize: number;
+  uploadedAt: string;
 }
 
-export type DocumentDraft = DocumentRecord & {
+export type DocumentDraft = Omit<
+  DocumentRecord,
+  "id" | "documentType" | "fileName" | "contentType" | "fileSize" | "uploadedAt"
+> & {
+  id?: number;
+  documentType: DocumentType | "";
+  fileName?: string;
+  contentType?: string;
+  fileSize?: number;
+  uploadedAt?: string;
   file?: File;
 };
 

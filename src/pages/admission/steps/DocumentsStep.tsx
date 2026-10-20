@@ -1,26 +1,20 @@
 import { useState, type ChangeEvent } from "react";
 import { FileText } from "lucide-react";
-import type { DocumentDraft, DocumentRecord } from "../../../types/admission";
+import { DocumentDownloadButton } from "../../../components/DocumentDownloadButton";
+import {
+  DOCUMENT_TYPES,
+  type DocumentDraft,
+  type DocumentRecord,
+} from "../../../types/admission";
 import { EmptyState } from "../components/EmptyState";
 import { Field } from "../components/Field";
 import { RecordEditor } from "../components/RecordEditor";
 import { StepIntro } from "../components/StepIntro";
 import { formatDate } from "../utils/format";
 
-const documentTypes = [
-    "BIRTH_CERTIFICATE" ,
-    "IDENTITY_PROOF" ,
-    "ADDRESS_PROOF",
-    "TRANSFER_CERTIFICATE" ,
-   "PREVIOUS_MARKSHEET",
-   "CASTE_CERTIFICATE",
-    "INCOME_CERTIFICATE",
-    "MEDICAL_CERTIFICATE",
-    "PASSPORT_PHOTO",
-];
 const maxFileSize = 1 * 1024 * 1024;
-const allowedMimeTypes = ["application/pdf", "image/jpeg", "image/png"];
 const allowedExtensions = [".pdf", ".jpg", ".jpeg", ".png"];
+const allowedMimeTypes = ["application/pdf", "image/jpeg", "image/png"];
 
 export function DocumentsStep({
   studentId,
@@ -36,7 +30,7 @@ export function DocumentsStep({
   draft: DocumentDraft | null;
   saving: boolean;
   onDraft: (draft: DocumentDraft | null) => void;
-  onSave: (onUploadProgress: (progress: number) => void) => void;
+  onSave: (onUploadProgress: (progress: number) => void) => Promise<boolean>;
   onRemove: (document: DocumentRecord) => void;
 }) {
   const [fileError, setFileError] = useState("");
@@ -45,27 +39,43 @@ export function DocumentsStep({
   function selectFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file || !draft) return;
+    const savedDocument = draft.id
+      ? documents.find((document) => document.id === draft.id)
+      : undefined;
+    if (savedDocument && savedDocument.documentType !== draft.documentType) {
+      setFileError("Save the document type change before replacing its file.");
+      event.target.value = "";
+      return;
+    }
     const lowerName = file.name.toLowerCase();
+    const extension = allowedExtensions.find((item) =>
+      lowerName.endsWith(item),
+    );
     const validType =
-      allowedMimeTypes.includes(file.type) ||
-      allowedExtensions.some((extension) => lowerName.endsWith(extension));
+      extension !== undefined &&
+      (!file.type || allowedMimeTypes.includes(file.type));
     if (!validType) {
-      setFileError("Choose a PDF, JPG, or PNG file.");
+      setFileError("Choose a valid PDF, JPG, or PNG file.");
       event.target.value = "";
       return;
     }
     if (file.size > maxFileSize) {
-      setFileError("The selected file must be 5 MB or smaller.");
+      setFileError("The selected file must be 1 MB or smaller.");
       event.target.value = "";
       return;
     }
     setFileError("");
-    onDraft({ ...draft, file, documentName: file.name });
+    onDraft({ ...draft, file, fileName: file.name });
   }
 
-  function saveDraft() {
-    setUploadProgress(draft?.file ? 0 : null);
-    onSave(setUploadProgress);
+  async function saveDraft() {
+    if (saving || !draft) return;
+    setUploadProgress(draft.file ? 0 : null);
+    const saved = await onSave(setUploadProgress);
+    if (saved) {
+      setFileError("");
+      setUploadProgress(null);
+    }
   }
 
   return (
@@ -78,37 +88,32 @@ export function DocumentsStep({
         {documents.map((document, index) => (
           <div
             className="admission-record"
-            key={document.id ?? `${document.documentName}-${index}`}
+            key={document.id ?? `${document.fileName}-${index}`}
           >
             <div className="document-record-content">
-              {isImage(document.documentName) ? (
-                <img
-                  alt=""
-                  className="document-thumbnail"
-                  src={document.documentUrl}
-                />
-              ) : (
-                <span aria-label="PDF document" className="document-pdf-icon">
-                  <FileText size={20} />
-                </span>
-              )}
+              <span
+                aria-label={
+                  document.contentType.startsWith("image/")
+                    ? "Image document"
+                    : "PDF document"
+                }
+                className="document-pdf-icon"
+              >
+                <FileText size={20} />
+              </span>
               <div>
-                <strong>{document.documentName}</strong>
+                <strong>{document.fileName}</strong>
                 <span>
                   {document.documentType} ·{" "}
-                  {isImage(document.documentName) ? "Image" : "PDF"} · Uploaded{" "}
-                  {formatDate(document.uploadedDate)}
+                  {document.contentType.startsWith("image/") ? "Image" : "PDF"}{" "}
+                  · Uploaded {formatDate(document.uploadedAt)}
                 </span>
-                {document.documentUrl && (
-                  <a
-                    className="text-button document-view-link"
-                    href={document.documentUrl}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    View
-                  </a>
-                )}
+                <DocumentDownloadButton
+                  className="text-button document-view-link"
+                  documentId={document.id}
+                  fileName={document.fileName}
+                  label="View"
+                />
               </div>
             </div>
             <div className="record-actions">
@@ -145,12 +150,16 @@ export function DocumentsStep({
             <Field label="Document Type" required>
               <select
                 value={draft.documentType}
+                disabled={saving || Boolean(draft.id && draft.file)}
                 onChange={(event) =>
-                  onDraft({ ...draft, documentType: event.target.value })
+                  onDraft({
+                    ...draft,
+                    documentType: event.target.value as DocumentDraft["documentType"],
+                  })
                 }
               >
                 <option value="">Select document type</option>
-                {documentTypes.map((type) => (
+                {DOCUMENT_TYPES.map((type) => (
                   <option key={type} value={type}>
                     {type}
                   </option>
@@ -161,6 +170,7 @@ export function DocumentsStep({
               <input
                 accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                 disabled={saving}
+                required={!draft.id}
                 onChange={selectFile}
                 type="file"
               />
@@ -168,11 +178,10 @@ export function DocumentsStep({
           </div>
           {draft.file ? (
             <p className="file-selection">
-              Selected file: {draft.file.name} (
-              {formatFileSize(draft.file.size)})
+              Selected file: {draft.file.name} ({formatFileSize(draft.file.size)})
             </p>
           ) : draft.id ? (
-            <p className="file-selection">Current file: {draft.documentName}</p>
+            <p className="file-selection">Current file: {draft.fileName}</p>
           ) : null}
           {fileError && (
             <p className="field-error" role="alert">
@@ -227,9 +236,6 @@ export function DocumentsStep({
             onDraft({
               studentId,
               documentType: "",
-              documentName: "",
-              documentUrl: "",
-              uploadedDate: new Date().toISOString().slice(0, 10),
             })
           }
           type="button"
@@ -239,10 +245,6 @@ export function DocumentsStep({
       )}
     </StepIntro>
   );
-}
-
-function isImage(fileName: string) {
-  return /\.(jpe?g|png)$/i.test(fileName);
 }
 
 function formatFileSize(size: number) {
