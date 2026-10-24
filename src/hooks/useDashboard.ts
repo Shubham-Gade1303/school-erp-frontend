@@ -1,15 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   getActiveAcademicYear,
   getAttendanceToday,
   getDashboardSummary,
-  getFeeCollection,
   getTodaysSchedule,
 } from "../services/dashboardService";
 import type {
   AttendanceToday,
   DashboardSummary,
-  FeeCollection,
   SchedulePeriod,
 } from "../types/dashboard";
 
@@ -52,19 +50,11 @@ function useSection<T>(initialData: T | null = null) {
   return [state, load] as const;
 }
 
-function getCurrentMonth() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
-
 export function useDashboard() {
   const [summary, loadSummary] = useSection<DashboardSummary>();
   const [attendance, loadAttendance] = useSection<AttendanceToday>();
-  const [fees, loadFees] = useSection<FeeCollection[]>([]);
   const [schedule, loadSchedule] = useSection<SchedulePeriod[]>([]);
   const [academicYear, loadAcademicYear] = useSection<string>();
-  const [month, setMonth] = useState(getCurrentMonth);
-  const initialMonth = useRef(month);
 
   const refetchSummary = useCallback(
     (showLoading = true) => loadSummary(getDashboardSummary, showLoading),
@@ -73,11 +63,6 @@ export function useDashboard() {
   const refetchAttendance = useCallback(
     (showLoading = true) => loadAttendance(getAttendanceToday, showLoading),
     [loadAttendance],
-  );
-  const refetchFees = useCallback(
-    (showLoading = true) =>
-      loadFees(() => getFeeCollection(month), showLoading),
-    [loadFees, month],
   );
   const refetchSchedule = useCallback(
     (showLoading = true) => loadSchedule(getTodaysSchedule, showLoading),
@@ -93,21 +78,15 @@ export function useDashboard() {
     void Promise.all([
       refetchSummary(),
       refetchAttendance(),
-      loadFees(() => getFeeCollection(initialMonth.current)),
       refetchSchedule(),
       refetchAcademicYear(),
     ]);
   }, [
-    loadFees,
     refetchAcademicYear,
     refetchAttendance,
     refetchSchedule,
     refetchSummary,
   ]);
-
-  useEffect(() => {
-    if (month !== initialMonth.current) void refetchFees();
-  }, [month, refetchFees]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -119,14 +98,10 @@ export function useDashboard() {
   return {
     summary,
     attendance,
-    fees,
     schedule,
     academicYear,
-    month,
-    setMonth,
     refetchSummary,
     refetchAttendance,
-    refetchFees,
     refetchSchedule,
     refetchAcademicYear,
   };

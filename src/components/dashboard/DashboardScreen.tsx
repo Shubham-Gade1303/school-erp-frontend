@@ -12,15 +12,8 @@ import { useAuth } from "../../context/AuthContext";
 import { useDashboard, type DashboardSectionState } from "../../hooks/useDashboard";
 import type {
   AttendanceToday,
-  FeeCollection,
   SchedulePeriod,
 } from "../../types/dashboard";
-
-const moneyFormatter = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  maximumFractionDigits: 0,
-});
 
 export function DashboardScreen() {
   const { user } = useAuth();
@@ -151,35 +144,6 @@ export function DashboardScreen() {
         </section>
       </div>
 
-      <div className="dashboard-fee-layout">
-        <section className="panel dashboard-panel dashboard-fees fee-panel">
-          <div className="panel-header dashboard-panel-header">
-            <h2>Fee Collection - Month Wise</h2>
-            <label className="dashboard-month-picker">
-              <span className="visually-hidden">Fee collection month</span>
-              <input
-                max={getCurrentMonth()}
-                onChange={(event) => dashboard.setMonth(event.target.value)}
-                type="month"
-                value={dashboard.month}
-              />
-            </label>
-          </div>
-          <FeeContent
-            state={dashboard.fees}
-            onRetry={() => void dashboard.refetchFees()}
-          />
-        </section>
-
-        <section className="panel dashboard-panel dashboard-placeholder-card">
-          <div className="panel-header dashboard-panel-header">
-            <h2>Fee Overview</h2>
-          </div>
-          <div className="dashboard-placeholder-copy">
-            <p>More dashboard insights will appear here.</p>
-          </div>
-        </section>
-      </div>
     </div>
   );
 }
@@ -313,49 +277,6 @@ function AttendanceContent({
   );
 }
 
-function FeeContent({
-  state,
-  onRetry,
-}: {
-  state: DashboardSectionState<FeeCollection[]>;
-  onRetry: () => void;
-}) {
-  if (state.isLoading && !state.data) return <SectionSkeleton rows={3} />;
-  if (state.error && !state.data) {
-    return <SectionError message={state.error} onRetry={onRetry} />;
-  }
-  if (!state.data?.length) {
-    return <p className="dashboard-empty-state">No fee records for this month.</p>;
-  }
-
-  return (
-    <div className="fee-chart">
-      {state.data.map((fee) => (
-        <div className="fee-row" key={fee.feeType}>
-          <div className="fee-row-heading">
-            <span>{fee.feeType}</span>
-            <strong>{formatPercentage(fee.percentage)}%</strong>
-          </div>
-          <div
-            className="fee-track"
-            role="progressbar"
-            aria-label={`${fee.feeType} collected`}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.min(100, Math.max(0, fee.percentage))}
-          >
-            <span style={{ width: `${Math.min(100, Math.max(0, fee.percentage))}%` }} />
-          </div>
-          <small>
-            {moneyFormatter.format(fee.collectedAmount)} /{" "}
-            {moneyFormatter.format(fee.totalAmount)}
-          </small>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function ScheduleContent({
   state,
   onRetry,
@@ -461,9 +382,4 @@ function isCurrentPeriod(period: SchedulePeriod, now: Date) {
   const startMinutes = startHour * 60 + startMinute;
   const endMinutes = endHour * 60 + endMinute;
   return currentMinutes >= startMinutes && currentMinutes < endMinutes;
-}
-
-function getCurrentMonth() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }

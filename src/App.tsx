@@ -287,13 +287,6 @@ function DashboardScreen() {
     },
   ];
 
-  const feeCollection = [
-    { label: "Tuition Fee", value: 90 },
-    { label: "Transport Fee", value: 75 },
-    { label: "Hostel Fee", value: 60 },
-    { label: "Other Fee", value: 50 },
-  ];
-
   const topPerformers = [
     { name: "Aarav Sharma", score: "96%", badge: "Grade A" },
     { name: "Diya Nair", score: "94%", badge: "Grade A" },
@@ -448,29 +441,6 @@ function DashboardScreen() {
               </div>
             </section>
           </div>
-
-          <section className="panel dashboard-panel dashboard-fees fee-panel">
-            <div className="panel-header dashboard-panel-header">
-              <h2>Fee Collection - Month Wise</h2>
-              <button className="dashboard-filter-button" type="button">
-                This Month
-              </button>
-            </div>
-
-            <div className="fee-chart">
-              {feeCollection.map((item) => (
-                <div className="fee-row" key={item.label}>
-                  <div className="fee-label-row">
-                    <span>{item.label}</span>
-                  </div>
-                  <div className="fee-track">
-                    <span style={{ width: `${item.value}%` }} />
-                  </div>
-                  <strong>{item.value}%</strong>
-                </div>
-              ))}
-            </div>
-          </section>
 
           <section className="panel dashboard-panel dashboard-insights insight-panel">
             <div className="panel-header dashboard-panel-header">
