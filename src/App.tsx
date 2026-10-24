@@ -363,21 +363,18 @@ function DashboardScreen() {
                   {
                     label: "Total Students",
                     value: dashboardCounts.totalStudents,
-                    weeklyChange: undefined,
                     icon: "students",
                     tone: "cyan",
                   },
                   {
                     label: "Total Teachers",
                     value: dashboardCounts.totalTeachers,
-                    weeklyChange: undefined,
                     icon: "teachers",
                     tone: "purple",
                   },
                   {
                     label: "Total Classes",
                     value: dashboardCounts.totalClasses,
-                    weeklyChange: undefined,
                     icon: "classes",
                     tone: "orange",
                   },
@@ -388,7 +385,6 @@ function DashboardScreen() {
                       attendanceOverview.rate !== null
                         ? `${attendanceOverview.rate}%`
                         : "—",
-                    weeklyChange: undefined,
                     icon: "attendance",
                     tone: "red",
                   },
@@ -399,8 +395,6 @@ function DashboardScreen() {
                     label={stat.label}
                     value={stat.value}
                     tone={stat.tone}
-                    weeklyChange={stat.weeklyChange}
-                    weeklyChangeLabel={stat.weeklyChangeLabel}
                   />
                 ))
               ) : isDashboardCountsLoading ? (
@@ -746,33 +740,18 @@ function StatCard({
   label,
   value,
   tone,
-  weeklyChange,
-  weeklyChangeLabel = "this week",
 }: {
   icon: React.ReactNode;
   label: string;
   value: string | number;
   tone: string;
-  weeklyChange?: number;
-  weeklyChangeLabel?: string;
 }) {
-  const hasWeeklyChange =
-    weeklyChange !== undefined &&
-    Number.isFinite(weeklyChange) &&
-    weeklyChange !== 0;
-
   return (
     <article className="stat-card">
       <div className={`stat-icon ${tone}`}>{icon}</div>
       <div className="stat-card-copy">
         <span>{label}</span>
         <strong>{value}</strong>
-        {hasWeeklyChange && (
-          <small>
-            {weeklyChange > 0 ? "+" : ""}
-            {weeklyChange} {weeklyChangeLabel}
-          </small>
-        )}
       </div>
     </article>
   );

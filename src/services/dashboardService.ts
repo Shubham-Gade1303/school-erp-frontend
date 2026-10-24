@@ -1,3 +1,4 @@
+import axios from "axios";
 import axiosClient from "../API/axiosClient";
 import type {
   AttendanceToday,
@@ -19,14 +20,36 @@ export interface DashboardCounts {
   totalClasses: number;
 }
 
+async function loadDashboardResource<T>(
+  resource: string,
+  request: Promise<T>,
+): Promise<T> {
+  try {
+    return await request;
+  } catch (error) {
+    const detail = axios.isAxiosError(error)
+      ? error.response?.status
+        ? `HTTP ${error.response.status}`
+        : error.message
+      : error instanceof Error
+        ? error.message
+        : "Unknown error";
+    throw new Error(`Unable to load ${resource}: ${detail}.`, { cause: error });
+  }
+}
+
 export async function getDashboardCounts(): Promise<DashboardCounts> {
-  const [studentsResponse, teachersResponse, academicYearsResponse, standardsResponse] =
-    await Promise.all([
-      getAllStudents(),
-      getAllTeachers(),
-      getAcademicYears(),
-      getStandards(),
-    ]);
+  const [
+    studentsResponse,
+    teachersResponse,
+    academicYearsResponse,
+    standardsResponse,
+  ] = await Promise.all([
+    loadDashboardResource("students", getAllStudents()),
+    loadDashboardResource("teachers", getAllTeachers()),
+    loadDashboardResource("academic years", getAcademicYears()),
+    loadDashboardResource("standards", getStandards()),
+  ]);
   const activeAcademicYear = academicYearsResponse.data.find(
     (academicYear) => academicYear.active,
   );
@@ -34,8 +57,11 @@ export async function getDashboardCounts(): Promise<DashboardCounts> {
   const classSections = activeAcademicYear
     ? await Promise.all(
         standardsResponse.data.map((standard) =>
+        loadDashboardResource(
+          `class sections for ${standard.standardName}`,
           getClassSections(activeAcademicYear.id, standard.id),
         ),
+          ),
       )
     : [];
 
