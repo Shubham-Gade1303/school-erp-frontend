@@ -19,7 +19,6 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
-import { loadDashboardData } from "./API/dashboardService";
 import { TeacherDashboardContent } from "./components/teacher/TeacherDashboardContent";
 import { TeacherFeaturePlaceholder } from "./components/teacher/TeacherFeaturePlaceholder";
 import { AppLayout } from "./components/layout/AppLayout";
@@ -30,8 +29,10 @@ import { AdmissionPage } from "./pages/admission/AdmissionPage";
 import { AcademicYearsPage } from "./pages/admission/AcademicYearsPage";
 import { AttendancePage } from "./pages/AttendancePage";
 import { ExamsPage } from "./pages/ExamsPage";
-import type { DashboardData, UserRole } from "./types/api";
+import type { UserRole } from "./types/api";
+import type { DashboardCounts } from "./services/dashboardService";
 import { getAttendanceByDate } from "./services/attendanceService";
+import { getDashboardCounts } from "./services/dashboardService";
 import { getAllStudents } from "./services/studentService";
 import type { AttendanceRecord } from "./types/attendance";
 import "./App.css";
@@ -175,23 +176,58 @@ function RoleRoute({ role }: { role: UserRole }) {
 function DashboardScreen() {
   const { user, accessDeniedMessage, clearAccessDenied } = useAuth();
   const navigate = useNavigate();
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(
-    null,
-  );
+  const [dashboardCounts, setDashboardCounts] =
+    useState<DashboardCounts | null>(null);
+  const [dashboardCountsError, setDashboardCountsError] = useState<
+    string | null
+  >(null);
+  const [isDashboardCountsLoading, setIsDashboardCountsLoading] =
+    useState(true);
+  const [dashboardCountsRetry, setDashboardCountsRetry] = useState(0);
   const [attendanceOverview, setAttendanceOverview] =
     useState<AttendanceOverviewState>({ status: "loading" });
   const role = user?.role;
 
+  const retryDashboardCounts = () => {
+    setDashboardCountsError(null);
+    setIsDashboardCountsLoading(true);
+    setDashboardCountsRetry((retry) => retry + 1);
+  };
+
   useEffect(() => {
     if (!role || role === "TEACHER") return;
     let isCurrent = true;
-    loadDashboardData(role).then((data) => {
-      if (isCurrent) setDashboardData(data);
-    });
+
+    const loadCounts = async (showLoading: boolean) => {
+      if (showLoading) setIsDashboardCountsLoading(true);
+      try {
+        const counts = await getDashboardCounts();
+        if (!isCurrent) return;
+        setDashboardCounts(counts);
+        setDashboardCountsError(null);
+      } catch (error) {
+        if (!isCurrent) return;
+        setDashboardCountsError(
+          error instanceof Error && error.message
+            ? error.message
+            : "Unable to load dashboard counts.",
+        );
+      } finally {
+        if (isCurrent && showLoading) setIsDashboardCountsLoading(false);
+      }
+    };
+
+    void loadCounts(true);
+    const interval = window.setInterval(
+      () => void loadCounts(false),
+      5 * 60 * 1000,
+    );
+
     return () => {
       isCurrent = false;
+      window.clearInterval(interval);
     };
-  }, [role]);
+  }, [role, dashboardCountsRetry]);
 
   useEffect(() => {
     if (!role || role === "TEACHER") return;
@@ -246,7 +282,7 @@ function DashboardScreen() {
     };
   }, [role]);
 
-  if (!user || !role || (role !== "TEACHER" && !dashboardData)) return null;
+  if (!user || !role) return null;
 
   const scheduleData = [
     {
@@ -322,15 +358,81 @@ function DashboardScreen() {
 
           <div className="dashboard-top-row">
             <div className="stats-grid dashboard-summary-grid dashboard-stats-grid">
-              {dashboardData?.stats.map((stat) => (
-                <StatCard
-                  icon={getStatIcon(stat.icon)}
-                  key={stat.label}
-                  label={stat.label}
-                  value={stat.value}
-                  tone={stat.tone}
-                />
-              ))}
+              {dashboardCounts ? (
+                [
+                  {
+                    label: "Total Students",
+                    value: dashboardCounts.totalStudents,
+                    weeklyChange: undefined,
+                    icon: "students",
+                    tone: "cyan",
+                  },
+                  {
+                    label: "Total Teachers",
+                    value: dashboardCounts.totalTeachers,
+                    weeklyChange: undefined,
+                    icon: "teachers",
+                    tone: "purple",
+                  },
+                  {
+                    label: "Total Classes",
+                    value: dashboardCounts.totalClasses,
+                    weeklyChange: undefined,
+                    icon: "classes",
+                    tone: "orange",
+                  },
+                  {
+                    label: "Attendance",
+                    value:
+                      attendanceOverview.status === "loaded" &&
+                      attendanceOverview.rate !== null
+                        ? `${attendanceOverview.rate}%`
+                        : "—",
+                    weeklyChange: undefined,
+                    icon: "attendance",
+                    tone: "red",
+                  },
+                ].map((stat) => (
+                  <StatCard
+                    icon={getStatIcon(stat.icon)}
+                    key={stat.label}
+                    label={stat.label}
+                    value={stat.value}
+                    tone={stat.tone}
+                    weeklyChange={stat.weeklyChange}
+                    weeklyChangeLabel={stat.weeklyChangeLabel}
+                  />
+                ))
+              ) : isDashboardCountsLoading ? (
+                <p className="empty-state" role="status">
+                  Loading dashboard totals...
+                </p>
+              ) : (
+                <div className="form-error" role="alert">
+                  <span>
+                    {dashboardCountsError ?? "Unable to load dashboard totals."}
+                  </span>
+                  <button
+                    className="dashboard-retry-button"
+                    onClick={retryDashboardCounts}
+                    type="button"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+              {dashboardCounts && dashboardCountsError && (
+                <div className="form-error" role="alert">
+                  <span>{dashboardCountsError}</span>
+                  <button
+                    className="dashboard-retry-button"
+                    onClick={retryDashboardCounts}
+                    type="button"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
             </div>
 
             <section className="panel dashboard-panel dashboard-attendance attendance-panel">
@@ -644,21 +746,33 @@ function StatCard({
   label,
   value,
   tone,
+  weeklyChange,
+  weeklyChangeLabel = "this week",
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string;
+  value: string | number;
   tone: string;
+  weeklyChange?: number;
+  weeklyChangeLabel?: string;
 }) {
+  const hasWeeklyChange =
+    weeklyChange !== undefined &&
+    Number.isFinite(weeklyChange) &&
+    weeklyChange !== 0;
+
   return (
     <article className="stat-card">
       <div className={`stat-icon ${tone}`}>{icon}</div>
       <div className="stat-card-copy">
         <span>{label}</span>
         <strong>{value}</strong>
-        <small>
-          +12 This Week <b>↗</b>
-        </small>
+        {hasWeeklyChange && (
+          <small>
+            {weeklyChange > 0 ? "+" : ""}
+            {weeklyChange} {weeklyChangeLabel}
+          </small>
+        )}
       </div>
     </article>
   );
