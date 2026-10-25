@@ -1,6 +1,6 @@
 import axios from "axios";
 import { CalendarDays, CalendarPlus, CircleAlert } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createExam, deleteExam, updateExam } from "../API/examApi";
 import { ExamFormModal } from "../components/exams/ExamFormModal";
 import { ExamScheduleTable } from "../components/exams/ExamScheduleTable";
@@ -10,6 +10,7 @@ import { useExamData, useExamLookups } from "../hooks/useExams";
 import type {
   ExamRecord,
   ExamRequest,
+  ExamStats,
   ExamValidationError,
 } from "../types/exam";
 import "./ExamsPage.css";
@@ -21,34 +22,43 @@ export function ExamsPage() {
   const [standardId, setStandardId] = useState("");
   const [examId, setExamId] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [lookupsRetryKey, setLookupsRetryKey] = useState(0);
   const [editingExam, setEditingExam] = useState<
     ExamRecord | null | undefined
   >(undefined);
   const [deleteTarget, setDeleteTarget] = useState<ExamRecord | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const isSavingRef = useRef(false);
   const [formError, setFormError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [deleteError, setDeleteError] = useState("");
 
   const selectedYearId = academicYearId ? Number(academicYearId) : undefined;
-  const lookups = useExamLookups();
-  const filters = {
-    academicYearId: selectedYearId,
-    standardId: standardId ? Number(standardId) : undefined,
-    examId: examId ? Number(examId) : undefined,
-  };
-  const examsData = useExamData(filters, refreshKey);
-  const visibleClasses = lookups.classes.filter(
-    (item) =>
-      !selectedYearId || item.academicYearId === selectedYearId,
+  const selectedStandardId = standardId ? Number(standardId) : undefined;
+  const lookups = useExamLookups(lookupsRetryKey);
+  const examsData = useExamData(refreshKey);
+  const examOptions = examsData.exams.filter(
+    (exam) =>
+      (!selectedYearId || exam.academicYearId === selectedYearId) &&
+      (!selectedStandardId || exam.standardId === selectedStandardId),
   );
-  const loadError = lookups.error || examsData.error;
+  const visibleExams = examOptions.filter(
+    (exam) => !examId || String(exam.id) === examId,
+  );
+  const stats = summarizeExams(visibleExams);
+  const loadError = [examsData.error, lookups.error].filter(Boolean).join(" ");
   const isLoading = examsData.loading || lookups.loading;
 
   function changeYear(value: string) {
     setAcademicYearId(value);
     setStandardId("");
     setExamId("");
+  }
+
+  function retryLoading() {
+    if (isLoading) return;
+    if (examsData.error) setRefreshKey((value) => value + 1);
+    if (lookups.error) setLookupsRetryKey((value) => value + 1);
   }
 
   function beginCreate() {
@@ -64,6 +74,8 @@ export function ExamsPage() {
   }
 
   async function saveExam(request: ExamRequest) {
+    if (isSavingRef.current) return;
+    isSavingRef.current = true;
     setIsSaving(true);
     setFormError("");
     setFieldErrors({});
@@ -80,12 +92,14 @@ export function ExamsPage() {
       setFormError(parsed.message);
       setFieldErrors(parsed.fieldErrors);
     } finally {
+      isSavingRef.current = false;
       setIsSaving(false);
     }
   }
 
   async function confirmDelete() {
-    if (!deleteTarget) return;
+    if (!deleteTarget || isSavingRef.current) return;
+    isSavingRef.current = true;
     setIsSaving(true);
     setDeleteError("");
     try {
@@ -95,6 +109,7 @@ export function ExamsPage() {
     } catch (error: unknown) {
       setDeleteError(getApiValidationError(error).message);
     } finally {
+      isSavingRef.current = false;
       setIsSaving(false);
     }
   }
@@ -112,7 +127,7 @@ export function ExamsPage() {
             <label>
               <span>Academic Year</span>
               <select
-                disabled={lookups.academicYears.length === 0}
+                disabled={lookups.academicYearsLoading}
                 onChange={(event) => changeYear(event.target.value)}
                 value={academicYearId}
               >
@@ -127,7 +142,7 @@ export function ExamsPage() {
             <label>
               <span>Class</span>
               <select
-                disabled={lookups.loading}
+                disabled={lookups.standardsLoading}
                 onChange={(event) => {
                   setStandardId(event.target.value);
                   setExamId("");
@@ -145,12 +160,12 @@ export function ExamsPage() {
             <label>
               <span>Exam</span>
               <select
-                disabled={examsData.loading}
+                disabled={examsData.loading || examsData.error !== ""}
                 onChange={(event) => setExamId(event.target.value)}
                 value={examId}
               >
                 <option value="">All exams</option>
-                {examsData.exams.map((exam) => (
+                {examOptions.map((exam) => (
                   <option key={exam.id} value={exam.id}>
                     {exam.examName}
                   </option>
@@ -174,12 +189,22 @@ export function ExamsPage() {
         <p className="exam-error-message" role="alert">
           <CircleAlert aria-hidden="true" size={17} />
           {loadError}
+          <button
+            className="exam-retry-button"
+            disabled={isLoading}
+            onClick={retryLoading}
+            type="button"
+          >
+            Retry
+          </button>
         </p>
       )}
 
-      <ExamStatsCards loading={isLoading} stats={examsData.stats} />
+      {!examsData.error && (
+        <ExamStatsCards loading={examsData.loading} stats={stats} />
+      )}
 
-      {isLoading ? (
+      {examsData.loading ? (
         <section aria-label="Loading exam schedule" className="exam-schedule-card">
           <div className="exam-section-heading">
             <div>
@@ -193,11 +218,11 @@ export function ExamsPage() {
             <span /><span /><span />
           </div>
         </section>
-      ) : !loadError ? (
+      ) : !examsData.error ? (
         <ExamScheduleTable
           canManage={canManage}
           classes={lookups.classes}
-          exams={examsData.exams}
+          exams={visibleExams}
           onDelete={(exam) => {
             setDeleteError("");
             setDeleteTarget(exam);
@@ -208,7 +233,7 @@ export function ExamsPage() {
 
       {editingExam !== undefined && (
         <ExamFormModal
-          classes={visibleClasses}
+          academicYears={lookups.academicYears}
           error={formError}
           exam={editingExam}
           fieldErrors={fieldErrors}
@@ -216,7 +241,9 @@ export function ExamsPage() {
           key={editingExam?.id ?? "new"}
           onCancel={() => setEditingExam(undefined)}
           onSubmit={saveExam}
+          standards={lookups.standards}
           selectedAcademicYearId={selectedYearId}
+          selectedStandardId={selectedStandardId}
         />
       )}
 
@@ -264,6 +291,47 @@ export function ExamsPage() {
       )}
     </main>
   );
+}
+
+function summarizeExams(exams: ExamRecord[]): ExamStats {
+  const today = getLocalDate();
+  return exams.reduce<ExamStats>(
+    (stats, exam) => {
+      stats.total += 1;
+      const startDate = parseIsoDateOnly(exam.startDate);
+      const endDate = parseIsoDateOnly(exam.endDate);
+
+      if (startDate && startDate > today) stats.upcoming += 1;
+      if (endDate && endDate < today) stats.completed += 1;
+      return stats;
+    },
+    { total: 0, upcoming: 0, completed: 0, resultsPending: null },
+  );
+}
+
+function getLocalDate() {
+  const now = new Date();
+  return [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function parseIsoDateOnly(value: string) {
+  const date = value.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+
+  const [year, month, day] = date.split("-").map(Number);
+  const parsed = new Date(year, month - 1, day);
+  if (
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month - 1 ||
+    parsed.getDate() !== day
+  ) {
+    return null;
+  }
+  return date;
 }
 
 function getApiValidationError(error: unknown): ExamValidationError {

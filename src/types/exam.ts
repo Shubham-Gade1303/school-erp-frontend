@@ -1,9 +1,3 @@
-export type ExamStatus =
-  | "UPCOMING"
-  | "ONGOING"
-  | "RESULTS_PENDING"
-  | "COMPLETED";
-
 export interface ExamRecord {
   id: number;
   examName: string;
@@ -14,8 +8,6 @@ export interface ExamRecord {
   startDate: string;
   endDate: string;
   active: boolean;
-  status?: ExamStatus | string;
-  resultsEntered?: boolean;
 }
 
 export interface ExamRequest {
@@ -27,17 +19,11 @@ export interface ExamRequest {
   active: boolean;
 }
 
-export interface ExamFilters {
-  academicYearId?: number;
-  standardId?: number;
-  examId?: number;
-}
-
 export interface ExamStats {
   total: number;
   upcoming: number;
   completed: number;
-  resultsPending: number;
+  resultsPending: number | null;
 }
 
 export interface ExamClassOption {

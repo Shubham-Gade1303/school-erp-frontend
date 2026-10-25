@@ -1,15 +1,14 @@
 import { useState, type FormEvent } from "react";
 import { CalendarPlus, X } from "lucide-react";
-import type {
-  ExamClassOption,
-  ExamRecord,
-  ExamRequest,
-} from "../../types/exam";
+import type { AcademicYear, Standard } from "../../types/admission";
+import type { ExamRecord, ExamRequest } from "../../types/exam";
 
 interface ExamFormModalProps {
   exam: ExamRecord | null;
-  classes: ExamClassOption[];
+  academicYears: AcademicYear[];
+  standards: Standard[];
   selectedAcademicYearId?: number;
+  selectedStandardId?: number;
   isSaving: boolean;
   error: string;
   fieldErrors: Record<string, string>;
@@ -19,8 +18,10 @@ interface ExamFormModalProps {
 
 export function ExamFormModal({
   exam,
-  classes,
+  academicYears,
+  standards,
   selectedAcademicYearId,
+  selectedStandardId,
   isSaving,
   error,
   fieldErrors,
@@ -28,10 +29,11 @@ export function ExamFormModal({
   onSubmit,
 }: ExamFormModalProps) {
   const [examName, setExamName] = useState(() => exam?.examName ?? "");
-  const [classKey, setClassKey] = useState(() =>
-    exam?.academicYearId && exam.standardId
-      ? `${exam.academicYearId}:${exam.standardId}`
-      : "",
+  const [academicYearId, setAcademicYearId] = useState(() =>
+    String(exam?.academicYearId ?? selectedAcademicYearId ?? ""),
+  );
+  const [standardId, setStandardId] = useState(() =>
+    String(exam?.standardId ?? selectedStandardId ?? ""),
   );
   const [startDate, setStartDate] = useState(
     () => exam?.startDate?.slice(0, 10) ?? "",
@@ -39,6 +41,7 @@ export function ExamFormModal({
   const [endDate, setEndDate] = useState(
     () => exam?.endDate?.slice(0, 10) ?? "",
   );
+  const [active, setActive] = useState(() => exam?.active ?? true);
   const dateError =
     startDate && endDate && endDate < startDate
       ? "End date must be on or after the start date."
@@ -46,31 +49,41 @@ export function ExamFormModal({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!examName.trim() || !classKey || !startDate || !endDate) {
+    if (
+      isSaving ||
+      !examName.trim() ||
+      examName.trim().length > 100 ||
+      !academicYearId ||
+      !standardId ||
+      !startDate ||
+      !endDate
+    ) {
       return;
     }
     if (dateError) return;
-    const [yearValue, standardValue] = classKey.split(":");
-    const academicYearId = Number(yearValue);
-    const standardId = Number(standardValue);
-    const selectedClass = classes.find(
-      (option) =>
-        option.academicYearId === academicYearId &&
-        option.standardId === standardId,
+    const selectedYear = academicYears.find(
+      (year) => year.id === Number(academicYearId),
     );
-    if (!selectedClass) return;
+    const selectedStandard = standards.find(
+      (standard) => standard.id === Number(standardId),
+    );
+    if (!selectedYear || !selectedStandard) return;
     await onSubmit({
       examName: examName.trim(),
-      academicYearId: selectedClass.academicYearId,
-      standardId: selectedClass.standardId,
+      academicYearId: selectedYear.id,
+      standardId: selectedStandard.id,
       startDate,
       endDate,
-      active: exam?.active ?? true,
+      active,
     });
   }
 
   return (
-    <div className="exam-dialog-backdrop" onMouseDown={onCancel} role="presentation">
+    <div
+      className="exam-dialog-backdrop"
+      onMouseDown={() => !isSaving && onCancel()}
+      role="presentation"
+    >
       <section
         aria-labelledby="exam-form-title"
         aria-modal="true"
@@ -106,25 +119,32 @@ export function ExamFormModal({
                 value={examName}
               />
             </ExamField>
-            <ExamField
-              error={fieldErrors.academicYearId ?? fieldErrors.standardId}
-              label="Academic Year / Class"
-            >
+            <ExamField error={fieldErrors.academicYearId} label="Academic Year">
               <select
-                disabled={classes.length === 0}
-                onChange={(event) => setClassKey(event.target.value)}
+                disabled={academicYears.length === 0}
+                onChange={(event) => setAcademicYearId(event.target.value)}
                 required
-                value={classKey}
+                value={academicYearId}
               >
-                <option value="">Select academic year and class</option>
-                {classes.map((item) => (
-                  <option
-                    key={`${item.academicYearId}:${item.standardId}`}
-                    value={`${item.academicYearId}:${item.standardId}`}
-                  >
-                    {item.academicYearId === selectedAcademicYearId
-                      ? item.label
-                      : `${item.label} · ${item.academicYear}`}
+                <option value="">Select academic year</option>
+                {academicYears.map((year) => (
+                  <option key={year.id} value={year.id}>
+                    {year.academicYear}
+                  </option>
+                ))}
+              </select>
+            </ExamField>
+            <ExamField error={fieldErrors.standardId} label="Class / Standard">
+              <select
+                disabled={standards.length === 0}
+                onChange={(event) => setStandardId(event.target.value)}
+                required
+                value={standardId}
+              >
+                <option value="">Select class</option>
+                {standards.map((standard) => (
+                  <option key={standard.id} value={standard.id}>
+                    {standard.standardName}
                   </option>
                 ))}
               </select>
@@ -149,6 +169,14 @@ export function ExamFormModal({
               </ExamField>
             </div>
           </div>
+          <label className="exam-active-toggle">
+            <input
+              checked={active}
+              onChange={(event) => setActive(event.target.checked)}
+              type="checkbox"
+            />
+            <span>Active</span>
+          </label>
           <div className="exam-dialog-actions">
             <button
               className="exam-secondary-button"

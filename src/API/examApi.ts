@@ -1,17 +1,11 @@
 import axiosClient from "./axiosClient";
 import type { AcademicYear, ClassSection, Standard } from "../types/admission";
 import type {
-  ExamFilters,
   ExamRecord,
   ExamRequest,
-  ExamStats,
 } from "../types/exam";
 
-export const getExams = (filters: ExamFilters = {}) =>
-  axiosClient.get<ExamRecord[]>("/exams", { params: filters });
-
-export const getStats = (filters: ExamFilters = {}) =>
-  axiosClient.get<ExamStats>("/exams/stats", { params: filters });
+export const getExams = () => axiosClient.get<ExamRecord[]>("/exams");
 
 export const createExam = (data: ExamRequest) =>
   axiosClient.post<ExamRecord>("/exams", data);

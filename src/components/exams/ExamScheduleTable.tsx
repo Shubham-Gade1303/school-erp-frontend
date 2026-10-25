@@ -31,20 +31,18 @@ export function ExamScheduleTable({
           <thead>
             <tr>
               <th scope="col">Exam</th>
+              <th scope="col">Academic year</th>
               <th scope="col">Class</th>
-              <th scope="col">Status</th>
+              <th scope="col">Start date</th>
+              <th scope="col">End date</th>
+              <th scope="col">Active status</th>
               {canManage && <th scope="col">Actions</th>}
             </tr>
           </thead>
           <tbody>
             {exams.map((exam) => {
-              const className =
-                exam.standardName ||
-                classes.find(
-                  (item) =>
-                    item.standardId === exam.standardId &&
-                    item.academicYearId === exam.academicYearId,
-                )?.label ||
+              const className = exam.standardName ||
+                classes.find((item) => item.standardId === exam.standardId)?.label ||
                 "—";
               return (
                 <tr key={exam.id}>
@@ -55,13 +53,13 @@ export function ExamScheduleTable({
                       </span>
                       <span>
                         <strong>{exam.examName}</strong>
-                        <small>
-                          {formatDateRange(exam.startDate, exam.endDate)}
-                        </small>
                       </span>
                     </div>
                   </td>
+                  <td>{exam.academicYear || "—"}</td>
                   <td>{className}</td>
+                  <td>{formatDate(exam.startDate)}</td>
+                  <td>{formatDate(exam.endDate)}</td>
                   <td><StatusBadge exam={exam} /></td>
                   {canManage && (
                     <td>
@@ -104,15 +102,18 @@ export function ExamScheduleTable({
   );
 }
 
-function formatDateRange(startDate: string, endDate: string) {
-  const start = formatDate(startDate);
-  const end = formatDate(endDate);
-  return end !== start ? `${start} – ${end}` : start;
-}
-
 function formatDate(date: string) {
-  const parsed = new Date(`${date.slice(0, 10)}T00:00:00`);
-  return Number.isNaN(parsed.getTime())
-    ? date
-    : new Intl.DateTimeFormat("en-GB").format(parsed);
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date.slice(0, 10));
+  if (!match) return date;
+
+  const [, year, month, day] = match;
+  const parsed = new Date(Number(year), Number(month) - 1, Number(day));
+  if (
+    parsed.getFullYear() !== Number(year) ||
+    parsed.getMonth() !== Number(month) - 1 ||
+    parsed.getDate() !== Number(day)
+  ) {
+    return date;
+  }
+  return new Intl.DateTimeFormat("en-GB").format(parsed);
 }

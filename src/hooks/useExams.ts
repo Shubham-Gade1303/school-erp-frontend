@@ -3,68 +3,87 @@ import {
   getAcademicYears,
   getExams,
   getStandards,
-  getStats,
 } from "../API/examApi";
 import type { AcademicYear, Standard } from "../types/admission";
-import type {
-  ExamFilters,
-  ExamRecord,
-  ExamStats,
-} from "../types/exam";
-import { normalizeList } from "../pages/admission/utils/format";
+import type { ExamRecord } from "../types/exam";
 
 interface ExamLookups {
   academicYears: AcademicYear[];
   standards: Standard[];
-  error: string;
+  academicYearError: string;
+  standardsError: string;
+  academicYearsLoadedKey: number | null;
+  standardsLoadedKey: number | null;
 }
 
 interface ExamData {
   exams: ExamRecord[];
-  stats: ExamStats | null;
   error: string;
-  loadedKey: string | null;
+  loadedKey: number | null;
 }
 
-const emptyStats: ExamStats = {
-  total: 0,
-  upcoming: 0,
-  completed: 0,
-  resultsPending: 0,
-};
-
-export function useExamLookups() {
+export function useExamLookups(retryKey: number) {
   const [lookups, setLookups] = useState<ExamLookups>({
     academicYears: [],
     standards: [],
-    error: "",
+    academicYearError: "",
+    standardsError: "",
+    academicYearsLoadedKey: null,
+    standardsLoadedKey: null,
   });
-  const [referencesLoaded, setReferencesLoaded] = useState(false);
 
   useEffect(() => {
     let current = true;
-    Promise.all([getAcademicYears(), getStandards()])
-      .then(([yearsResponse, standardsResponse]) => {
+    getAcademicYears()
+      .then((response) => {
         if (!current) return;
-        setLookups({
-          academicYears: normalizeList<AcademicYear>(yearsResponse.data),
-          standards: normalizeList<Standard>(standardsResponse.data),
-          error: "",
-        });
-        setReferencesLoaded(true);
+        const academicYears = readList<AcademicYear>(
+          response.data,
+          "academic years",
+        );
+        setLookups((existing) => ({
+          ...existing,
+          academicYears,
+          academicYearError: "",
+          academicYearsLoadedKey: retryKey,
+        }));
       })
       .catch((error: unknown) => {
         if (!current) return;
         setLookups((existing) => ({
           ...existing,
-          error: getErrorMessage(error, "Unable to load exam filters."),
+          academicYearError: getErrorMessage(
+            error,
+            "Unable to load academic years.",
+          ),
+          academicYearsLoadedKey: retryKey,
+        }));
+      });
+
+    getStandards()
+      .then((response) => {
+        if (!current) return;
+        const standards = readList<Standard>(response.data, "standards");
+        setLookups((existing) => ({
+          ...existing,
+          standards,
+          standardsError: "",
+          standardsLoadedKey: retryKey,
+        }));
+      })
+      .catch((error: unknown) => {
+        if (!current) return;
+        setLookups((existing) => ({
+          ...existing,
+          standardsError: getErrorMessage(error, "Unable to load standards."),
+          standardsLoadedKey: retryKey,
         }));
       });
 
     return () => {
       current = false;
     };
-  }, []);
+  }, [retryKey]);
 
   const classes = useMemo(
     () => {
@@ -89,31 +108,38 @@ export function useExamLookups() {
   return {
     ...lookups,
     classes,
-    loading: !referencesLoaded && !lookups.error,
+    academicYearsLoading: lookups.academicYearsLoadedKey !== retryKey,
+    standardsLoading: lookups.standardsLoadedKey !== retryKey,
+    loading:
+      lookups.academicYearsLoadedKey !== retryKey ||
+      lookups.standardsLoadedKey !== retryKey,
+    error: [
+      lookups.academicYearsLoadedKey === retryKey
+        ? lookups.academicYearError
+        : "",
+      lookups.standardsLoadedKey === retryKey ? lookups.standardsError : "",
+    ]
+      .filter(Boolean)
+      .join(" "),
   };
 }
 
-export function useExamData(filters: ExamFilters, refreshKey: number) {
+export function useExamData(refreshKey: number) {
   const [data, setData] = useState<ExamData>({
     exams: [],
-    stats: null,
     error: "",
     loadedKey: null,
   });
-  const { academicYearId, standardId, examId } = filters;
-  const requestKey = `${academicYearId ?? ""}:${standardId ?? ""}:${examId ?? ""}:${refreshKey}`;
 
   useEffect(() => {
     let current = true;
-    const requestFilters = { academicYearId, standardId, examId };
-    Promise.all([getExams(requestFilters), getStats(requestFilters)])
-      .then(([examsResponse, statsResponse]) => {
+    getExams()
+      .then((response) => {
         if (!current) return;
         setData({
-          exams: normalizeList<ExamRecord>(examsResponse.data),
-          stats: statsResponse.data,
+          exams: readList<ExamRecord>(response.data, "examinations"),
           error: "",
-          loadedKey: requestKey,
+          loadedKey: refreshKey,
         });
       })
       .catch((error: unknown) => {
@@ -121,26 +147,33 @@ export function useExamData(filters: ExamFilters, refreshKey: number) {
         setData((existing) => ({
           ...existing,
           error: getErrorMessage(error, "Unable to load examinations."),
-          loadedKey: requestKey,
+          loadedKey: refreshKey,
         }));
       });
 
     return () => {
       current = false;
     };
-  }, [
-    academicYearId,
-    standardId,
-    examId,
-    requestKey,
-    refreshKey,
-  ]);
+  }, [refreshKey]);
 
   return {
     ...data,
-    stats: data.stats ?? emptyStats,
-    loading: data.loadedKey !== requestKey,
+    error: data.loadedKey === refreshKey ? data.error : "",
+    loading: data.loadedKey !== refreshKey,
   };
+}
+
+function readList<T>(data: unknown, resourceName: string): T[] {
+  if (Array.isArray(data)) return data as T[];
+  if (
+    data &&
+    typeof data === "object" &&
+    "content" in data &&
+    Array.isArray(data.content)
+  ) {
+    return data.content as T[];
+  }
+  throw new Error(`The server returned an invalid ${resourceName} response.`);
 }
 
 function getErrorMessage(error: unknown, fallback: string) {

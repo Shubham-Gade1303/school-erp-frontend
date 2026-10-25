@@ -7,10 +7,10 @@ import {
 import type { ExamStats } from "../../types/exam";
 
 const statItems = [
-  { key: "total", label: "Total exams", icon: ClipboardList },
+  { key: "total", label: "Total Exams", icon: ClipboardList },
   { key: "upcoming", label: "Upcoming", icon: CalendarDays },
   { key: "completed", label: "Completed", icon: CircleCheck },
-  { key: "resultsPending", label: "Results pending", icon: Clock3 },
+  { key: "resultsPending", label: "Results Pending", icon: Clock3 },
 ] as const;
 
 export function ExamStatsCards({
@@ -32,7 +32,14 @@ export function ExamStatsCards({
             {loading ? (
               <span aria-label={`Loading ${label}`} className="exam-stat-skeleton" />
             ) : (
-              <strong>{stats[key]}</strong>
+              <>
+                <strong>{stats[key] ?? "—"}</strong>
+                {key === "resultsPending" && (
+                  <small title="Exam API does not expose result publication status">
+                    Not available
+                  </small>
+                )}
+              </>
             )}
           </div>
         </article>
