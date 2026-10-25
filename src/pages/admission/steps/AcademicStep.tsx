@@ -1,5 +1,9 @@
 import { GraduationCap } from "lucide-react";
-import type { AcademicYear, ClassSection, Standard } from "../../../types/admission";
+import type {
+  AcademicYear,
+  ClassSection,
+  Standard,
+} from "../../../types/admission";
 import { Field } from "../components/Field";
 import { StepIntro } from "../components/StepIntro";
 import type { AdmissionWorkflow } from "../hooks/useAdmissionWorkflow";
@@ -31,20 +35,29 @@ export function AcademicStep({
     >
       <div className="admission-form-grid">
         <Field label="Academic Year" required>
-          <select value={workflow.academicYearId} onChange={(event) => onAcademicYearChange(event.target.value)}>
+          <select
+            value={workflow.academicYearId}
+            onChange={(event) => onAcademicYearChange(event.target.value)}
+          >
             <option value="">Select academic year</option>
             {academicYears.map((year) => (
               <option key={year.id} value={year.id}>
-                {year.academicYear}{year.active ? " (Active)" : ""}
+                {year.academicYear}
+                {year.active ? " (Active)" : ""}
               </option>
             ))}
           </select>
         </Field>
         <Field label="Standard" required>
-          <select value={workflow.standardId} onChange={(event) => onStandardChange(event.target.value)}>
+          <select
+            value={workflow.standardId}
+            onChange={(event) => onStandardChange(event.target.value)}
+          >
             <option value="">Select standard</option>
             {standards.map((standard) => (
-              <option key={standard.id} value={standard.id}>{standard.standardName}</option>
+              <option key={standard.id} value={standard.id}>
+                {standard.standardName}
+              </option>
             ))}
           </select>
         </Field>
@@ -55,10 +68,16 @@ export function AcademicStep({
             onChange={(event) => onSectionChange(event.target.value)}
           >
             <option value="">
-              {sectionsLoading ? "Loading divisions..." : sections.length ? "Select division" : "Choose year and standard first"}
+              {sectionsLoading
+                ? "Loading divisions..."
+                : sections.length
+                  ? "Select division"
+                  : "Choose year and standard first"}
             </option>
             {sections.map((section) => (
-              <option key={section.id} value={section.id}>{section.sectionName}</option>
+              <option key={section.id} value={section.id}>
+                {section.sectionName}
+              </option>
             ))}
           </select>
         </Field>

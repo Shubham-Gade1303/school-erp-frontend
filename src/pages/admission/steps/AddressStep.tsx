@@ -4,7 +4,13 @@ import { EmptyState } from "../components/EmptyState";
 import { Field } from "../components/Field";
 import { StepIntro } from "../components/StepIntro";
 
-const addressFields = ["addressLine", "city", "state", "postalCode", "country"] as const;
+const addressFields = [
+  "addressLine",
+  "city",
+  "state",
+  "postalCode",
+  "country",
+] as const;
 const fieldLabels: Record<(typeof addressFields)[number], string> = {
   addressLine: "Address Line",
   city: "City",
@@ -37,12 +43,19 @@ export function AddressStep({
               <Field key={field} label={fieldLabels[field]} required>
                 <input
                   value={address[field]}
-                  onChange={(event) => onChange({ ...address, [field]: event.target.value })}
+                  onChange={(event) =>
+                    onChange({ ...address, [field]: event.target.value })
+                  }
                 />
               </Field>
             ))}
           </div>
-          <button className="secondary-button" disabled={saving} onClick={onSave} type="button">
+          <button
+            className="secondary-button"
+            disabled={saving}
+            onClick={onSave}
+            type="button"
+          >
             {saving ? "Saving..." : "Save address"}
           </button>
         </>

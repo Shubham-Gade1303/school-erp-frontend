@@ -154,7 +154,8 @@ export function DocumentsStep({
                 onChange={(event) =>
                   onDraft({
                     ...draft,
-                    documentType: event.target.value as DocumentDraft["documentType"],
+                    documentType: event.target
+                      .value as DocumentDraft["documentType"],
                   })
                 }
               >
@@ -178,7 +179,8 @@ export function DocumentsStep({
           </div>
           {draft.file ? (
             <p className="file-selection">
-              Selected file: {draft.file.name} ({formatFileSize(draft.file.size)})
+              Selected file: {draft.file.name} (
+              {formatFileSize(draft.file.size)})
             </p>
           ) : draft.id ? (
             <p className="file-selection">Current file: {draft.fileName}</p>

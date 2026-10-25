@@ -10,14 +10,12 @@ import {
   LayoutDashboard,
   LogOut,
   MessageCircle,
-  Search,
   Settings,
   ShieldCheck,
   UserPlus,
   UsersRound,
   Video,
 } from "lucide-react";
-import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import type { UserRole } from "../../types/api";
@@ -55,6 +53,7 @@ const navigationByRole: Record<UserRole, NavigationItem[]> = {
     ["Dashboard", "dashboard", LayoutDashboard],
     ["My Classes", "classes", BookOpen],
     ["My Students", "students", UsersRound],
+    ["Subjects", "subjects", BookOpen],
     ["Attendance", "attendance", CalendarDays],
     ["Assignments", "assignments", ClipboardList],
     ["Exams", "exams", ClipboardList],
@@ -68,7 +67,6 @@ const navigationByRole: Record<UserRole, NavigationItem[]> = {
 export function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
 
   if (!user) return null;
 
@@ -104,14 +102,6 @@ export function AppLayout() {
       </aside>
       <section className="content-area">
         <header className="topbar">
-          <label className="search-box">
-            <Search size={15} />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search Classes, assignment, student......."
-            />
-          </label>
           <div className="top-actions">
             <button aria-label="Notifications" type="button"><Bell size={17} /></button>
             <button className="message-button" aria-label="Messages" type="button"><MessageCircle size={17} /><i /></button>
@@ -123,7 +113,7 @@ export function AppLayout() {
             <ChevronRight size={14} />
           </div>
         </header>
-        <Outlet context={{ search }} />
+        <Outlet />
       </section>
     </main>
   );

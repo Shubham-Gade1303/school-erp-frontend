@@ -25,6 +25,7 @@ import { AppLayout } from "./components/layout/AppLayout";
 import { useAuth } from "./context/AuthContext";
 import { TeachersPage } from "./pages/admin/Teachers";
 import { StudentsPage } from "./pages/admin/Students";
+import { SubjectsPage } from "./pages/admin/Subjects";
 import { AdmissionPage } from "./pages/admission/AdmissionPage";
 import { AcademicYearsPage } from "./pages/admission/AcademicYearsPage";
 import { AttendancePage } from "./pages/AttendancePage";
@@ -69,7 +70,7 @@ function App() {
             <Route path="academic-years" element={<AcademicYearsPage />} />
             <Route path="students" element={<StudentsPage />} />
             <Route path="teachers" element={<TeachersPage />} />
-            <Route path="subjects" element={<FeaturePage title="Subjects" />} />
+            <Route path="subjects" element={<SubjectsPage />} />
             <Route path="attendance" element={<AttendancePage />} />
             <Route path="exams" element={<ExamsPage />} />
             <Route path="results" element={<FeaturePage title="Results" />} />
@@ -85,7 +86,7 @@ function App() {
             <Route path="dashboard" element={<DashboardScreen />} />
             <Route path="students" element={<StudentsPage />} />
             <Route path="teachers" element={<FeaturePage title="Teachers" />} />
-            <Route path="subjects" element={<FeaturePage title="Subjects" />} />
+            <Route path="subjects" element={<SubjectsPage />} />
             <Route path="attendance" element={<AttendancePage />} />
             <Route path="exams" element={<ExamsPage />} />
             <Route path="results" element={<FeaturePage title="Results" />} />
@@ -96,6 +97,7 @@ function App() {
         <Route path="/teacher" element={<RoleRoute role="TEACHER" />}>
           <Route element={<AppLayout />}>
             <Route path="dashboard" element={<DashboardScreen />} />
+            <Route path="subjects" element={<SubjectsPage />} />
             <Route
               path="classes"
               element={<TeacherFeatureRoute title="My Classes" />}

@@ -60,8 +60,7 @@ export const createDocument = (
 export const updateDocument = (
   id: number,
   data: { studentId: number; documentType: DocumentType },
-) =>
-  axiosClient.put<DocumentRecord>(`/documents/${id}`, data);
+) => axiosClient.put<DocumentRecord>(`/documents/${id}`, data);
 export const replaceDocumentFile = (
   id: number,
   file: File,
@@ -69,20 +68,16 @@ export const replaceDocumentFile = (
 ) => {
   const formData = new FormData();
   formData.append("file", file);
-  return axiosClient.put<DocumentRecord>(
-    `/documents/${id}/file`,
-    formData,
-    {
-      headers: { "Content-Type": "multipart/form-data" },
-      onUploadProgress: (event) => {
-        if (event.total) {
-          onUploadProgress(
-            Math.min(100, Math.round((event.loaded / event.total) * 100)),
-          );
-        }
-      },
+  return axiosClient.put<DocumentRecord>(`/documents/${id}/file`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+    onUploadProgress: (event) => {
+      if (event.total) {
+        onUploadProgress(
+          Math.min(100, Math.round((event.loaded / event.total) * 100)),
+        );
+      }
     },
-  );
+  });
 };
 export async function downloadDocumentFile(id: number, fileName: string) {
   const response = await axiosClient.get<Blob>(`/documents/${id}/download`, {

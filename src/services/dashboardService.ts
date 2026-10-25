@@ -57,11 +57,11 @@ export async function getDashboardCounts(): Promise<DashboardCounts> {
   const classSections = activeAcademicYear
     ? await Promise.all(
         standardsResponse.data.map((standard) =>
-        loadDashboardResource(
-          `class sections for ${standard.standardName}`,
-          getClassSections(activeAcademicYear.id, standard.id),
-        ),
+          loadDashboardResource(
+            `class sections for ${standard.standardName}`,
+            getClassSections(activeAcademicYear.id, standard.id),
           ),
+        ),
       )
     : [];
 
@@ -80,7 +80,8 @@ export async function getDashboardCounts(): Promise<DashboardCounts> {
 }
 
 export async function getDashboardSummary() {
-  const response = await axiosClient.get<DashboardSummary>("/dashboard/summary");
+  const response =
+    await axiosClient.get<DashboardSummary>("/dashboard/summary");
   return response.data;
 }
 
