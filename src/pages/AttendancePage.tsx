@@ -1,5 +1,11 @@
 import { Check, LoaderCircle, Search, UsersRound } from "lucide-react";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import {
   getAcademicYears,
   getClassSections,
@@ -22,7 +28,7 @@ import "./AttendancePage.css";
 
 interface AttendanceDraft {
   id?: number;
-  status: AttendanceStatus;
+  status?: AttendanceStatus;
   remarks: string;
 }
 
@@ -47,6 +53,7 @@ export function AttendancePage() {
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
   const [isAttendanceReady, setIsAttendanceReady] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const isSaveInProgress = useRef(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -149,12 +156,17 @@ export function AttendancePage() {
     );
   }, [search, students]);
 
-  const presentCount = students.reduce(
-    (count, student) =>
-      count + (attendanceByStudent[student.id]?.status === "PRESENT" ? 1 : 0),
-    0,
+  const { presentCount, absentCount } = students.reduce(
+    (counts, student) => {
+      const status = attendanceByStudent[student.id]?.status;
+      if (status === "PRESENT") counts.presentCount += 1;
+      if (status === "ABSENT") counts.absentCount += 1;
+      return counts;
+    },
+    { presentCount: 0, absentCount: 0 },
   );
-  const absentCount = students.length - presentCount;
+  const notMarkedCount = students.length - presentCount - absentCount;
+  const markedStudentCount = presentCount + absentCount;
 
   function clearLoadedClass() {
     setStudents([]);
@@ -231,6 +243,7 @@ export function AttendancePage() {
         remarks: current[studentId]?.remarks ?? "",
       },
     }));
+    setError("");
     setNotice("");
   }
 
@@ -251,24 +264,39 @@ export function AttendancePage() {
   }
 
   async function handleSaveAttendance() {
-    if (!students.length || !isAttendanceReady || isSaving) return;
+    if (
+      !students.length ||
+      !isAttendanceReady ||
+      isSaveInProgress.current
+    ) {
+      return;
+    }
 
+    const selectedStudents = students.flatMap((student) => {
+      const draft = attendanceByStudent[student.id];
+      const status = draft?.status;
+      return status === "PRESENT" || status === "ABSENT"
+        ? [{ student, draft, status }]
+        : [];
+    });
+    if (!selectedStudents.length) return;
+
+    isSaveInProgress.current = true;
     setIsSaving(true);
     setError("");
     setNotice("");
 
     const results = await Promise.allSettled(
-      students.map((student) => {
-        const saved = attendanceByStudent[student.id];
+      selectedStudents.map(({ student, draft, status }) => {
         const request: AttendanceRequest = {
           studentId: student.id,
           attendanceDate,
-          status: saved?.status ?? "PRESENT",
-          remarks: saved?.remarks ?? "",
+          status,
+          remarks: draft.remarks,
         };
 
-        return saved?.id
-          ? updateAttendance(saved.id, request)
+        return draft.id
+          ? updateAttendance(draft.id, request)
           : createAttendance(request);
       }),
     );
@@ -279,13 +307,23 @@ export function AttendancePage() {
     const successfulRecords = results.flatMap((result) =>
       result.status === "fulfilled" ? [result.value.data] : [],
     );
-    setAttendanceByStudent((current) =>
-      mergeSavedRecords(current, successfulRecords),
-    );
 
     try {
       const { data } = await getAttendanceByDate(attendanceDate);
-      setAttendanceByStudent(buildAttendanceState(students, data));
+      const refreshedState = mergeSavedRecords(
+        buildAttendanceState(students, data),
+        successfulRecords,
+      );
+      results.forEach((result, index) => {
+        if (result.status === "rejected") {
+          const { student, draft } = selectedStudents[index];
+          refreshedState[student.id] = {
+            ...draft,
+            id: refreshedState[student.id]?.id ?? draft.id,
+          };
+        }
+      });
+      setAttendanceByStudent(refreshedState);
       setIsAttendanceReady(true);
 
       if (failedCount) {
@@ -296,6 +334,9 @@ export function AttendancePage() {
         setNotice("Attendance saved successfully.");
       }
     } catch {
+      setAttendanceByStudent((current) =>
+        mergeSavedRecords(current, successfulRecords),
+      );
       setIsAttendanceReady(failedCount === 0);
       setError(
         failedCount
@@ -303,6 +344,7 @@ export function AttendancePage() {
           : "Attendance was saved, but the saved records could not be refreshed. Load students again before saving more changes.",
       );
     } finally {
+      isSaveInProgress.current = false;
       setIsSaving(false);
     }
   }
@@ -437,7 +479,14 @@ export function AttendancePage() {
               <span>Absent</span>
               <strong>{absentCount}</strong>
             </article>
+            <article className="panel attendance-summary-card">
+              <span>Not Marked</span>
+              <strong>{notMarkedCount}</strong>
+            </article>
           </div>
+          <p className="attendance-summary-note">
+            Counts reflect current selections, including unsaved changes.
+          </p>
 
           <section className="panel attendance-table-panel">
             <div className="attendance-table-toolbar">
@@ -484,8 +533,7 @@ export function AttendancePage() {
                   </thead>
                   <tbody>
                     {visibleStudents.map((student, index) => {
-                      const status =
-                        attendanceByStudent[student.id]?.status ?? "PRESENT";
+                      const status = attendanceByStudent[student.id]?.status;
                       return (
                         <tr key={student.id}>
                           <td>{index + 1}</td>
@@ -506,6 +554,7 @@ export function AttendancePage() {
                                     : "is-present"
                                 }
                                 type="button"
+                                aria-label={`Mark ${getStudentName(student)} present`}
                                 aria-pressed={status === "PRESENT"}
                                 onClick={() =>
                                   setStudentStatus(student.id, "PRESENT")
@@ -521,6 +570,7 @@ export function AttendancePage() {
                                     : "is-absent"
                                 }
                                 type="button"
+                                aria-label={`Mark ${getStudentName(student)} absent`}
                                 aria-pressed={status === "ABSENT"}
                                 onClick={() =>
                                   setStudentStatus(student.id, "ABSENT")
@@ -557,7 +607,7 @@ export function AttendancePage() {
                   !isAttendanceReady ||
                   isLoadingAttendance ||
                   isSaving ||
-                  !students.length
+                  !markedStudentCount
                 }
               >
                 {isSaving ? (
@@ -594,7 +644,7 @@ function defaultAttendanceState(
   students: StudentResponse[],
 ): AttendanceByStudent {
   return Object.fromEntries(
-    students.map((student) => [student.id, { status: "PRESENT", remarks: "" }]),
+    students.map((student) => [student.id, { remarks: "" }]),
   );
 }
 
@@ -617,7 +667,7 @@ function buildAttendanceState(
               status: normalizeStatus(record.status),
               remarks: record.remarks ?? "",
             }
-          : { status: "PRESENT", remarks: "" },
+          : { remarks: "" },
       ];
     }),
   );
@@ -638,8 +688,11 @@ function mergeSavedRecords(
   return next;
 }
 
-function normalizeStatus(status: string): AttendanceStatus {
-  return status.toUpperCase() === "ABSENT" ? "ABSENT" : "PRESENT";
+function normalizeStatus(status: string): AttendanceStatus | undefined {
+  const normalized = status.toUpperCase();
+  return normalized === "ABSENT" || normalized === "PRESENT"
+    ? normalized
+    : undefined;
 }
 
 function getStudentName(student: StudentResponse) {
