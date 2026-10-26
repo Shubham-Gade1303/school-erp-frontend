@@ -31,6 +31,58 @@ button,
 input {
   font: inherit;
 }
+select {
+  accent-color: var(--brand-strong);
+  color: var(--ink);
+  color-scheme: light;
+}
+#root select {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background-color: var(--surface);
+  cursor: pointer;
+  padding-right: 32px;
+}
+#root select:not([multiple]):not([size]) {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--brand-strong) 50%),
+    linear-gradient(135deg, var(--brand-strong) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 9px) 50%;
+  background-repeat: no-repeat;
+  background-size: 5px 5px;
+}
+#root select:hover:not(:disabled) {
+  border-color: var(--brand);
+}
+#root select:focus {
+  border-color: var(--brand-strong);
+  box-shadow: 0 0 0 3px var(--brand-light);
+  outline: none;
+}
+#root select:focus-visible {
+  outline: 2px solid var(--brand-strong);
+  outline-offset: 2px;
+}
+#root select:disabled {
+  background-color: var(--surface-muted);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+#root select:has(> option:checked[value=""]),
+#root select option[value=""] {
+  color: var(--muted);
+}
+#root select option {
+  background-color: var(--surface);
+  color: var(--ink);
+}
+#root select option:checked {
+  background-color: var(--brand-light);
+  color: var(--brand-strong);
+}
 button {
   border: 0;
   cursor: pointer;

@@ -8,6 +8,7 @@ import { DeleteTeacherDialog } from "../../components/teachers/DeleteTeacherDial
 import { TeacherDetails } from "../../components/teachers/TeacherDetails";
 import { TeacherForm } from "../../components/teachers/TeacherForm";
 import { TeacherTable } from "../../components/teachers/TeacherTable";
+import "./TeachersPage.css";
 
 export function TeachersPage() {
   const { user } = useAuth();

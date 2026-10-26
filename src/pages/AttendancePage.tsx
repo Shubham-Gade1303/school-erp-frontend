@@ -351,10 +351,11 @@ export function AttendancePage() {
 
   return (
     <section className="content-page attendance-page">
-      <header className="attendance-page-header">
+      <header className="admission-heading attendance-heading">
         <div>
+          <p className="admission-eyebrow">STUDENT MANAGEMENT</p>
           <h1>Attendance</h1>
-          <p>Take and manage daily student attendance</p>
+          <p>Record and manage daily student attendance.</p>
         </div>
       </header>
 
@@ -463,30 +464,32 @@ export function AttendancePage() {
 
       {hasLoadedStudents && students.length > 0 && (
         <>
-          <div
-            className="attendance-summary-grid"
-            aria-label="Attendance summary"
-          >
-            <article className="panel attendance-summary-card">
-              <span>Total Students</span>
-              <strong>{students.length}</strong>
-            </article>
-            <article className="panel attendance-summary-card attendance-summary-present">
-              <span>Present</span>
-              <strong>{presentCount}</strong>
-            </article>
-            <article className="panel attendance-summary-card attendance-summary-absent">
-              <span>Absent</span>
-              <strong>{absentCount}</strong>
-            </article>
-            <article className="panel attendance-summary-card">
-              <span>Not Marked</span>
-              <strong>{notMarkedCount}</strong>
-            </article>
+          <div className="attendance-summary-section">
+            <div
+              className="attendance-summary-grid"
+              aria-label="Attendance summary"
+            >
+              <article className="panel attendance-summary-card">
+                <span>Total Students</span>
+                <strong>{students.length}</strong>
+              </article>
+              <article className="panel attendance-summary-card attendance-summary-present">
+                <span>Present</span>
+                <strong>{presentCount}</strong>
+              </article>
+              <article className="panel attendance-summary-card attendance-summary-absent">
+                <span>Absent</span>
+                <strong>{absentCount}</strong>
+              </article>
+              <article className="panel attendance-summary-card attendance-summary-not-marked">
+                <span>Not Marked</span>
+                <strong>{notMarkedCount}</strong>
+              </article>
+            </div>
+            <p className="attendance-summary-note">
+              Counts reflect current selections, including unsaved changes.
+            </p>
           </div>
-          <p className="attendance-summary-note">
-            Counts reflect current selections, including unsaved changes.
-          </p>
 
           <section className="panel attendance-table-panel">
             <div className="attendance-table-toolbar">
@@ -536,12 +539,12 @@ export function AttendancePage() {
                       const status = attendanceByStudent[student.id]?.status;
                       return (
                         <tr key={student.id}>
-                          <td>{index + 1}</td>
-                          <td className="attendance-student-name">
+                          <td data-label="#">{index + 1}</td>
+                          <td className="attendance-student-name" data-label="Student">
                             {getStudentName(student)}
                           </td>
-                          <td>{student.admissionNumber}</td>
-                          <td>
+                          <td data-label="Admission Number">{student.admissionNumber}</td>
+                          <td data-label="Attendance">
                             <div
                               className="attendance-status-control"
                               role="group"

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { CalendarDays, CalendarPlus, CircleAlert } from "lucide-react";
+import { CalendarPlus, CircleAlert } from "lucide-react";
 import { useRef, useState } from "react";
 import { createExam, deleteExam, updateExam } from "../API/examApi";
 import { ExamFormModal } from "../components/exams/ExamFormModal";
@@ -118,64 +118,13 @@ export function ExamsPage() {
     <main className="exams-page">
       <header className="exams-page-header">
         <div className="exams-heading-copy">
-          <p className="exams-eyebrow">Academic planning</p>
+          <p className="exams-eyebrow">STUDENT MANAGEMENT</p>
           <h1>Examinations</h1>
           <p className="exams-subtitle">
             Review exam dates and results across the school.
           </p>
-          <div className="exam-filters" aria-label="Examination filters">
-            <label>
-              <span>Academic Year</span>
-              <select
-                disabled={lookups.academicYearsLoading}
-                onChange={(event) => changeYear(event.target.value)}
-                value={academicYearId}
-              >
-                <option value="">All academic years</option>
-                {lookups.academicYears.map((year) => (
-                  <option key={year.id} value={year.id}>
-                    {year.academicYear}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>Class</span>
-              <select
-                disabled={lookups.standardsLoading}
-                onChange={(event) => {
-                  setStandardId(event.target.value);
-                  setExamId("");
-                }}
-                value={standardId}
-              >
-                <option value="">All classes</option>
-                {lookups.standards.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.standardName}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>Exam</span>
-              <select
-                disabled={examsData.loading || examsData.error !== ""}
-                onChange={(event) => setExamId(event.target.value)}
-                value={examId}
-              >
-                <option value="">All exams</option>
-                {examOptions.map((exam) => (
-                  <option key={exam.id} value={exam.id}>
-                    {exam.examName}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
         </div>
         <div className="exams-header-action">
-          <CalendarDays aria-hidden="true" className="exams-header-calendar" size={25} />
           {canManage && (
             <button className="exam-primary-button" onClick={beginCreate} type="button">
               <CalendarPlus aria-hidden="true" size={17} />
@@ -184,6 +133,59 @@ export function ExamsPage() {
           )}
         </div>
       </header>
+
+      <section aria-label="Examination filters" className="exam-filter-card">
+        <div className="exam-filters">
+          <label>
+            <span>Academic Year</span>
+            <select
+              disabled={lookups.academicYearsLoading}
+              onChange={(event) => changeYear(event.target.value)}
+              value={academicYearId}
+            >
+              <option value="">All academic years</option>
+              {lookups.academicYears.map((year) => (
+                <option key={year.id} value={year.id}>
+                  {year.academicYear}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>Class</span>
+            <select
+              disabled={lookups.standardsLoading}
+              onChange={(event) => {
+                setStandardId(event.target.value);
+                setExamId("");
+              }}
+              value={standardId}
+            >
+              <option value="">All classes</option>
+              {lookups.standards.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.standardName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>Exam</span>
+            <select
+              disabled={examsData.loading || examsData.error !== ""}
+              onChange={(event) => setExamId(event.target.value)}
+              value={examId}
+            >
+              <option value="">All exams</option>
+              {examOptions.map((exam) => (
+                <option key={exam.id} value={exam.id}>
+                  {exam.examName}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </section>
 
       {loadError && (
         <p className="exam-error-message" role="alert">
