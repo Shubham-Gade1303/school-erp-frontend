@@ -21,8 +21,10 @@ import {
 } from "react-router-dom";
 import { TeacherDashboardContent } from "./components/teacher/TeacherDashboardContent";
 import { TeacherFeaturePlaceholder } from "./components/teacher/TeacherFeaturePlaceholder";
+import { DashboardScreen as LiveDashboardScreen } from "./components/dashboard/DashboardScreen";
 import { AppLayout } from "./components/layout/AppLayout";
 import { useAuth } from "./context/AuthContext";
+import { DashboardExamsProvider } from "./context/DashboardExamsProvider";
 import { TeachersPage } from "./pages/admin/Teachers";
 import { StudentsPage } from "./pages/admin/Students";
 import { SubjectsPage } from "./pages/admin/Subjects";
@@ -63,9 +65,10 @@ function App() {
     <Routes>
       <Route path="/login" element={<LoginScreen />} />
       <Route element={<ProtectedRoute />}>
+        <Route element={<DashboardExamsProvider />}>
         <Route path="/admin" element={<RoleRoute role="ADMIN" />}>
           <Route element={<AppLayout />}>
-            <Route path="dashboard" element={<DashboardScreen />} />
+            <Route path="dashboard" element={<DashboardRoute />} />
             <Route path="admission" element={<AdmissionPage />} />
             <Route path="academic-years" element={<AcademicYearsPage />} />
             <Route path="students" element={<StudentsPage />} />
@@ -83,7 +86,7 @@ function App() {
         </Route>
         <Route path="/principal" element={<RoleRoute role="PRINCIPAL" />}>
           <Route element={<AppLayout />}>
-            <Route path="dashboard" element={<DashboardScreen />} />
+            <Route path="dashboard" element={<DashboardRoute />} />
             <Route path="students" element={<StudentsPage />} />
             <Route path="teachers" element={<FeaturePage title="Teachers" />} />
             <Route path="subjects" element={<SubjectsPage />} />
@@ -96,7 +99,7 @@ function App() {
         </Route>
         <Route path="/teacher" element={<RoleRoute role="TEACHER" />}>
           <Route element={<AppLayout />}>
-            <Route path="dashboard" element={<DashboardScreen />} />
+            <Route path="dashboard" element={<DashboardRoute />} />
             <Route path="subjects" element={<SubjectsPage />} />
             <Route
               path="classes"
@@ -129,6 +132,7 @@ function App() {
               element={<TeacherFeatureRoute title="Profile" />}
             />
           </Route>
+          </Route>
         </Route>
       </Route>
       <Route path="*" element={<Navigate replace to="/login" />} />
@@ -138,6 +142,12 @@ function App() {
 
 function TeacherFeatureRoute({ title }: { title: string }) {
   return <TeacherFeaturePlaceholder title={title} />;
+}
+
+function DashboardRoute() {
+  const { user } = useAuth();
+  if (!user) return null;
+  return user.role === "TEACHER" ? <LegacyDashboardScreen /> : <LiveDashboardScreen />;
 }
 
 function FeaturePage({ title }: { title: string }) {
@@ -175,7 +185,7 @@ function RoleRoute({ role }: { role: UserRole }) {
   return <Outlet />;
 }
 
-function DashboardScreen() {
+function LegacyDashboardScreen() {
   const { user, accessDeniedMessage, clearAccessDenied } = useAuth();
   const navigate = useNavigate();
   const [dashboardCounts, setDashboardCounts] =
@@ -344,11 +354,12 @@ function DashboardScreen() {
       ) : (
         <div className="dashboard-page-shell">
           <header className="dashboard-hero-header">
-            <div>
+            <div className="dashboard-heading-copy">
               <p className="dashboard-heading-kicker">Dashboard</p>
-              <h1 className="dashboard-heading-title">
-                Welcome to School ERP System
-              </h1>
+              <h1 className="dashboard-heading-title">School Overview</h1>
+              <p className="dashboard-heading-description">
+                A quick look at today&apos;s school activity.
+              </p>
             </div>
             <div className="dashboard-header-actions">
               <div className="academic-year-pill">

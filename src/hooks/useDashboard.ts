@@ -1,15 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getActiveAcademicYear,
-  getAttendanceToday,
-  getDashboardSummary,
-  getTodaysSchedule,
-} from "../services/dashboardService";
-import type {
-  AttendanceToday,
-  DashboardSummary,
-  SchedulePeriod,
-} from "../types/dashboard";
+  getStandards,
+} from "../services/admissionService";
+import { getAttendanceByDate } from "../services/attendanceService";
+import { getAllStudents } from "../services/studentService";
+import { getAllTeachers } from "../services/teacherService";
+import type { AttendanceRecord } from "../types/attendance";
 
 export interface DashboardSectionState<T> {
   data: T | null;
@@ -28,81 +25,126 @@ function useSection<T>(initialData: T | null = null) {
     isLoading: true,
     error: null,
   });
+  const pendingRequest = useRef<Promise<void> | null>(null);
 
-  const load = useCallback(async (request: () => Promise<T>, showLoading = true) => {
-    setState((current) => ({
-      ...current,
-      isLoading: showLoading,
-      error: null,
-    }));
-    try {
-      const data = await request();
-      setState({ data, isLoading: false, error: null });
-    } catch (error) {
+  const load = useCallback(
+    (request: () => Promise<T>, showLoading = true) => {
+      if (pendingRequest.current) return pendingRequest.current;
       setState((current) => ({
         ...current,
-        isLoading: false,
-        error: getErrorMessage(error),
+        isLoading: showLoading,
+        error: null,
       }));
-    }
-  }, []);
+      pendingRequest.current = (async () => {
+        try {
+          const data = await request();
+          setState({ data, isLoading: false, error: null });
+        } catch (error) {
+          setState((current) => ({
+            ...current,
+            isLoading: false,
+            error: getErrorMessage(error),
+          }));
+        } finally {
+          pendingRequest.current = null;
+        }
+      })();
+      return pendingRequest.current;
+    },
+    [],
+  );
 
   return [state, load] as const;
 }
 
 export function useDashboard() {
-  const [summary, loadSummary] = useSection<DashboardSummary>();
-  const [attendance, loadAttendance] = useSection<AttendanceToday>();
-  const [schedule, loadSchedule] = useSection<SchedulePeriod[]>([]);
+  const [students, loadStudents] = useSection<number>();
+  const [teachers, loadTeachers] = useSection<number>();
+  const [classes, loadClasses] = useSection<number>();
+  const [attendance, loadAttendance] = useSection<AttendanceRecord[]>();
   const [academicYear, loadAcademicYear] = useSection<string>();
 
-  const refetchSummary = useCallback(
-    (showLoading = true) => loadSummary(getDashboardSummary, showLoading),
-    [loadSummary],
+  const refetchStudents = useCallback(
+    (showLoading = true) =>
+      loadStudents(async () => (await getAllStudents()).data.length, showLoading),
+    [loadStudents],
+  );
+  const refetchTeachers = useCallback(
+    (showLoading = true) =>
+      loadTeachers(async () => (await getAllTeachers()).data.length, showLoading),
+    [loadTeachers],
+  );
+  const refetchClasses = useCallback(
+    (showLoading = true) =>
+      loadClasses(async () => (await getStandards()).data.length, showLoading),
+    [loadClasses],
   );
   const refetchAttendance = useCallback(
-    (showLoading = true) => loadAttendance(getAttendanceToday, showLoading),
+    (showLoading = true) =>
+      loadAttendance(
+        async () => (await getAttendanceByDate(getLocalDateString())).data,
+        showLoading,
+      ),
     [loadAttendance],
-  );
-  const refetchSchedule = useCallback(
-    (showLoading = true) => loadSchedule(getTodaysSchedule, showLoading),
-    [loadSchedule],
   );
   const refetchAcademicYear = useCallback(
     (showLoading = true) =>
-      loadAcademicYear(getActiveAcademicYear, showLoading),
+      loadAcademicYear(
+        async () => {
+          const response = await getActiveAcademicYear();
+          return response.data.academicYear;
+        },
+        showLoading,
+      ),
     [loadAcademicYear],
   );
 
   useEffect(() => {
     void Promise.all([
-      refetchSummary(),
+      refetchStudents(),
+      refetchTeachers(),
+      refetchClasses(),
       refetchAttendance(),
-      refetchSchedule(),
       refetchAcademicYear(),
     ]);
   }, [
+    refetchClasses,
     refetchAcademicYear,
     refetchAttendance,
-    refetchSchedule,
-    refetchSummary,
+    refetchStudents,
+    refetchTeachers,
   ]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
-      void Promise.all([refetchSummary(false), refetchAttendance(false)]);
+      void Promise.all([
+        refetchStudents(false),
+        refetchTeachers(false),
+        refetchClasses(false),
+        refetchAttendance(false),
+      ]);
     }, 5 * 60 * 1000);
     return () => window.clearInterval(interval);
-  }, [refetchAttendance, refetchSummary]);
+  }, [refetchAttendance, refetchClasses, refetchStudents, refetchTeachers]);
 
   return {
-    summary,
+    students,
+    teachers,
     attendance,
-    schedule,
     academicYear,
-    refetchSummary,
+    classes,
+    refetchStudents,
+    refetchTeachers,
     refetchAttendance,
-    refetchSchedule,
     refetchAcademicYear,
+    refetchClasses,
   };
+}
+
+function getLocalDateString() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
