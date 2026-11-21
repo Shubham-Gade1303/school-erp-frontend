@@ -243,7 +243,18 @@ export function useAdmissionWorkflow() {
           Number(standardId),
         );
         if (requestId === sectionsRequestId.current) {
-          setSections(normalizeList<ClassSection>(response.data));
+          const activeSections = normalizeList<ClassSection>(
+            response.data,
+          ).filter((section) => section.active !== false);
+          setSections(activeSections);
+          setWorkflow((current) =>
+            current.classSectionId &&
+            !activeSections.some(
+              (section) => String(section.id) === current.classSectionId,
+            )
+              ? { ...current, classSectionId: "" }
+              : current,
+          );
         }
       } catch (loadError) {
         if (requestId === sectionsRequestId.current) {
@@ -460,9 +471,13 @@ export function useAdmissionWorkflow() {
     ) {
       nextErrors.bloodGroup = "Select a valid blood group.";
     }
-    if (!workflow.classSectionId) {
+    if (
+      !sections.some(
+        (section) => String(section.id) === workflow.classSectionId,
+      )
+    ) {
       setError(
-        "Select a division in the Academic step before saving the student.",
+        "Select an active division in the Academic step before saving the student.",
       );
       return Promise.resolve(false);
     }
@@ -669,6 +684,16 @@ export function useAdmissionWorkflow() {
       !workflow.classSectionId
     ) {
       setError("Complete the academic and student steps before submitting.");
+      return false;
+    }
+    if (
+      !sections.some(
+        (section) => String(section.id) === workflow.classSectionId,
+      )
+    ) {
+      setError(
+        "The selected division is no longer active. Choose an active division in the Academic step.",
+      );
       return false;
     }
     const request: StudentAdmissionRequest = {

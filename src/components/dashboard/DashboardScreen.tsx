@@ -11,10 +11,14 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useDashboardExams } from "../../hooks/useDashboardExams";
-import { useDashboard, type DashboardSectionState } from "../../hooks/useDashboard";
+import {
+  useDashboard,
+  type DashboardSectionState,
+} from "../../hooks/useDashboard";
 import type { AttendanceRecord } from "../../types/attendance";
 import type { ExamRecord } from "../../types/exam";
 import { getAttendanceByDate } from "../../services/attendanceService";
+import type { FeeCollection } from "../../types/dashboard";
 
 type AttendanceDay = {
   date: string;
@@ -92,7 +96,7 @@ export function DashboardScreen() {
       value: getMetricValue(dashboard.students),
       error: dashboard.students.data === null ? dashboard.students.error : null,
       icon: <GraduationCap />,
-      tone: "cyan",
+      tone: "purple",
       onRetry: () => void dashboard.refetchStudents(),
     },
     {
@@ -100,7 +104,7 @@ export function DashboardScreen() {
       value: getMetricValue(dashboard.teachers),
       error: dashboard.teachers.data === null ? dashboard.teachers.error : null,
       icon: <UsersRound />,
-      tone: "purple",
+      tone: "blue",
       onRetry: () => void dashboard.refetchTeachers(),
     },
     {
@@ -109,22 +113,23 @@ export function DashboardScreen() {
       error: dashboard.classes.data === null ? dashboard.classes.error : null,
       icon: <BookOpen />,
       tone: "orange",
-      note: "standards / grades",
+      note: dashboard.classes.data !== null ? "Active classes" : undefined,
       onRetry: () => void dashboard.refetchClasses(),
     },
     {
-      label: "Attendance Today",
-      value: dashboard.attendance.isLoading && !dashboard.attendance.data
-        ? "…"
-        : dashboard.attendance.error
-          ? "N/A"
-          : todayMetrics.percentage === null
+      label: "Attendance",
+      value:
+        dashboard.attendance.isLoading && !dashboard.attendance.data
+          ? "…"
+          : dashboard.attendance.error
             ? "N/A"
-            : `${todayMetrics.percentage}%`,
-      error: dashboard.attendance.data === null ? dashboard.attendance.error : null,
+            : todayMetrics.percentage === null
+              ? "N/A"
+              : `${todayMetrics.percentage}%`,
+      error:
+        dashboard.attendance.data === null ? dashboard.attendance.error : null,
       icon: <ClipboardCheck />,
-      tone: "red",
-      note: "of marked records",
+      tone: "green",
       onRetry: () => void dashboard.refetchAttendance(),
     },
   ];
@@ -141,10 +146,10 @@ export function DashboardScreen() {
         <div className="dashboard-heading-copy">
           <p className="dashboard-heading-kicker">Dashboard</p>
           <h1 className="dashboard-heading-title">
-            Welcome back{user?.username ? `, ${user.username}` : ""}
+            Welcome to School ERP System
           </h1>
           <p className="dashboard-heading-description">
-            Here&apos;s what&apos;s happening across your school today.
+            Here&apos;s what&apos;s happening in your school today.
           </p>
         </div>
         <div className="dashboard-header-actions">
@@ -157,16 +162,16 @@ export function DashboardScreen() {
 
       <section className="dashboard-redesign-stats" aria-label="School summary">
         {statCards.map((card) => (
-            <StatCard
-              key={card.label}
-              icon={card.icon}
-              label={card.label}
-              value={card.value}
-              tone={card.tone}
-              error={card.error}
-              onRetry={card.onRetry}
-              note={card.note}
-            />
+          <StatCard
+            key={card.label}
+            icon={card.icon}
+            label={card.label}
+            value={card.value}
+            tone={card.tone}
+            error={card.error}
+            onRetry={card.onRetry}
+            note={card.note}
+          />
         ))}
       </section>
 
@@ -194,7 +199,9 @@ export function DashboardScreen() {
                 {hasWeekError && (
                   <p className="dashboard-inline-note" role="status">
                     Some daily attendance records could not be loaded.
-                    <button onClick={retryAttendance} type="button">Retry</button>
+                    <button onClick={retryAttendance} type="button">
+                      Retry
+                    </button>
                   </p>
                 )}
                 <AttendanceChart
@@ -208,13 +215,13 @@ export function DashboardScreen() {
           </section>
 
           <UnavailablePanel
-            title="Today&apos;s Schedule"
-            description="A timetable API is not available in the frontend services, so schedule data cannot be loaded here."
+            title="Today's Schedule"
+            description="Timetable data is not available."
           />
 
           <UnavailablePanel
             title="Recent Admissions"
-            description="Recent admission records and admission dates are not available through the current frontend API services."
+            description="Admission dates are not available."
           />
         </div>
 
@@ -247,29 +254,37 @@ export function DashboardScreen() {
             today={today}
             exams={exams}
             selectedExams={selectedDateExams}
-            onPrevious={() => setDisplayedMonth((month) =>
-              new Date(month.getFullYear(), month.getMonth() - 1, 1),
-            )}
-            onNext={() => setDisplayedMonth((month) =>
-              new Date(month.getFullYear(), month.getMonth() + 1, 1),
-            )}
+            onPrevious={() =>
+              setDisplayedMonth(
+                (month) =>
+                  new Date(month.getFullYear(), month.getMonth() - 1, 1),
+              )
+            }
+            onNext={() =>
+              setDisplayedMonth(
+                (month) =>
+                  new Date(month.getFullYear(), month.getMonth() + 1, 1),
+              )
+            }
             onSelectDate={setSelectedDate}
           />
 
           <UnavailablePanel
             title="Top Performers"
-            description="The performance API requires a student ID, so a school-wide ranking cannot be loaded without making a separate request for every student."
+            description="School-wide performance data is not available."
           />
 
-          <UnavailablePanel
-            title="Fee Collection"
-            description="Fee and payment APIs are scoped to individual students and fee records. No school-wide collection summary is available in the frontend services."
+          <FeeCollectionPanel
+            state={dashboard.feeCollection}
+            onRetry={() => void dashboard.refetchFeeCollection()}
           />
 
           <ImportantAlerts
             exams={upcomingExams}
             absentStudents={todayMetrics.absent}
-            attendanceReady={!dashboard.attendance.isLoading && !dashboard.attendance.error}
+            attendanceReady={
+              !dashboard.attendance.isLoading && !dashboard.attendance.error
+            }
             examsAvailable={examRecords !== null}
             onRetryExams={() => void retryExams()}
           />
@@ -306,7 +321,9 @@ function StatCard({
         {error && (
           <small className="dashboard-redesign-stat-error" title={error}>
             Data unavailable
-            <button onClick={onRetry} type="button">Retry</button>
+            <button onClick={onRetry} type="button">
+              Retry
+            </button>
           </small>
         )}
       </div>
@@ -322,11 +339,20 @@ function AcademicYearChip({
   onRetry: () => void;
 }) {
   if (state.isLoading && !state.data) {
-    return <span className="dashboard-date-pill" role="status">Loading academic year…</span>;
+    return (
+      <span className="dashboard-date-pill" role="status">
+        Loading academic year…
+      </span>
+    );
   }
   if (state.error && !state.data) {
     return (
-      <button className="dashboard-date-pill" onClick={onRetry} title={state.error} type="button">
+      <button
+        className="dashboard-date-pill"
+        onClick={onRetry}
+        title={state.error}
+        type="button"
+      >
         Academic year unavailable · Retry
       </button>
     );
@@ -335,17 +361,12 @@ function AcademicYearChip({
     <span className="dashboard-date-pill">
       <CalendarDays size={14} />
       Academic Year {state.data ?? "Unavailable"}
+      <ChevronRight className="dashboard-academic-chevron" size={13} />
     </span>
   );
 }
 
-function PanelHeader({
-  title,
-  action,
-}: {
-  title: string;
-  action?: ReactNode;
-}) {
+function PanelHeader({ title, action }: { title: string; action?: ReactNode }) {
   return (
     <div className="dashboard-redesign-panel-header">
       <h2>{title}</h2>
@@ -366,17 +387,25 @@ function AttendanceChart({
   todayRecords: AttendanceRecord[];
 }) {
   const values = dates.map((date) => {
-    const records = date === today ? todayRecords : recordsByDate.get(date)?.records ?? [];
+    const records =
+      date === today ? todayRecords : (recordsByDate.get(date)?.records ?? []);
     return { date, ...getAttendanceMetrics(records) };
   });
   const hasData = values.some((day) => day.marked > 0);
 
   if (!hasData) {
-    return <p className="dashboard-redesign-empty">No attendance records are available for this week.</p>;
+    return (
+      <p className="dashboard-redesign-empty">
+        No attendance records are available for this week.
+      </p>
+    );
   }
 
   return (
-    <div className="dashboard-attendance-chart" aria-label="Attendance percentage by day">
+    <div
+      className="dashboard-attendance-chart"
+      aria-label="Attendance percentage by day"
+    >
       <div className="dashboard-chart-axis" aria-hidden="true">
         <span>100%</span>
         <span>50%</span>
@@ -401,7 +430,12 @@ function AttendanceChart({
                   />
                 </>
               ) : (
-                <span className="dashboard-chart-no-data" title="No attendance records">—</span>
+                <span
+                  className="dashboard-chart-no-data"
+                  title="No attendance records"
+                >
+                  —
+                </span>
               )}
             </div>
             <small>{formatWeekday(day.date)}</small>
@@ -427,21 +461,103 @@ function ExamsContent({
   onRetry: () => void;
 }) {
   if (isLoading && !exams.length) return <SectionSkeleton />;
-  if (error && !exams.length) return <SectionError message={error} onRetry={onRetry} />;
-  if (!exams.length) return <p className="dashboard-redesign-empty">No upcoming examinations.</p>;
+  if (error && !exams.length)
+    return <SectionError message={error} onRetry={onRetry} />;
+  if (!exams.length)
+    return (
+      <p className="dashboard-redesign-empty">No upcoming examinations.</p>
+    );
 
   return (
-    <div className="dashboard-redesign-exams">
-      {exams.slice(0, 5).map((exam) => (
-        <article className="dashboard-redesign-exam" key={exam.id}>
-          <span className="dashboard-exam-date">{formatShortDate(exam.startDate)}</span>
-          <div>
-            <strong>{exam.examName}</strong>
-            <small>{exam.standardName} · {getExamTiming(exam.startDate)}</small>
-          </div>
-        </article>
-      ))}
+    <div className="dashboard-exams-table-wrap">
+      <table className="dashboard-exams-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Exam Name</th>
+            <th>Class</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {exams.slice(0, 4).map((exam) => (
+            <tr key={exam.id}>
+              <td>
+                <i
+                  className={`dashboard-exam-dot ${getExamTiming(exam.startDate) === "Tomorrow" ? "tomorrow" : ""}`}
+                />
+                {formatShortDate(exam.startDate)}
+              </td>
+              <td>{exam.examName}</td>
+              <td>{exam.standardName}</td>
+              <td>
+                <span
+                  className={`dashboard-exam-status ${getExamTiming(exam.startDate).toLowerCase()}`}
+                >
+                  {getExamTiming(exam.startDate)}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
+  );
+}
+
+function FeeCollectionPanel({
+  state,
+  onRetry,
+}: {
+  state: DashboardSectionState<FeeCollection[]>;
+  onRetry: () => void;
+}) {
+  const collected =
+    state.data?.reduce((total, item) => total + item.collectedAmount, 0) ?? 0;
+  const total =
+    state.data?.reduce((sum, item) => sum + item.totalAmount, 0) ?? 0;
+  const pending = Math.max(total - collected, 0);
+  const percentage = total > 0 ? Math.min((collected / total) * 100, 100) : 0;
+
+  return (
+    <section className="panel dashboard-redesign-panel dashboard-fee-panel">
+      <PanelHeader title="Fee Collection" />
+      {state.isLoading && !state.data ? (
+        <SectionSkeleton />
+      ) : state.error && !state.data ? (
+        <SectionError message={state.error} onRetry={onRetry} />
+      ) : !state.data?.length ? (
+        <p className="dashboard-redesign-empty">
+          No fee collection data is available.
+        </p>
+      ) : (
+        <div className="dashboard-fee-summary">
+          <div
+            aria-label={`${percentage.toFixed(0)} percent of fees collected`}
+            className="dashboard-fee-donut"
+            role="img"
+            style={{
+              background: `conic-gradient(#7650e8 ${percentage}%, #a8c9ff ${percentage}% 100%)`,
+            }}
+          >
+            <span>
+              <strong>{formatCurrency(collected)}</strong>
+              <small>Collected</small>
+            </span>
+          </div>
+          <div className="dashboard-fee-legend">
+            <span>
+              <i className="collected" />
+              Collected <strong>{formatCurrency(collected)}</strong>
+            </span>
+            <span>
+              <i className="pending" />
+              Pending <strong>{formatCurrency(pending)}</strong>
+            </span>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -472,26 +588,53 @@ function ExamCalendar({
         title="Exam Calendar"
         action={
           <div className="dashboard-calendar-controls">
-            <button aria-label="Previous month" onClick={onPrevious} type="button"><ChevronLeft size={16} /></button>
-            <strong>{month.toLocaleDateString(undefined, { month: "long", year: "numeric" })}</strong>
-            <button aria-label="Next month" onClick={onNext} type="button"><ChevronRight size={16} /></button>
+            <button
+              aria-label="Previous month"
+              onClick={onPrevious}
+              type="button"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <strong>
+              {month.toLocaleDateString(undefined, {
+                month: "long",
+                year: "numeric",
+              })}
+            </strong>
+            <button aria-label="Next month" onClick={onNext} type="button">
+              <ChevronRight size={16} />
+            </button>
           </div>
         }
       />
-      <div className="dashboard-calendar-grid" role="grid" aria-label="Examination dates">
+      <div
+        className="dashboard-calendar-grid"
+        role="grid"
+        aria-label="Examination dates"
+      >
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-          <span className="dashboard-calendar-weekday" key={day} role="columnheader">{day}</span>
+          <span
+            className="dashboard-calendar-weekday"
+            key={day}
+            role="columnheader"
+          >
+            {day}
+          </span>
         ))}
         {days.map((date) => {
           const inMonth = date.slice(0, 7) === formatMonth(month);
-          const hasExam = exams.some((exam) => exam.active && isDateInExamRange(date, exam));
+          const hasExam = exams.some(
+            (exam) => exam.active && isDateInExamRange(date, exam),
+          );
           const classes = [
             "dashboard-calendar-day",
             inMonth ? "" : "outside-month",
             date === today ? "is-today" : "",
             date === selectedDate ? "is-selected" : "",
             hasExam ? "has-exam" : "",
-          ].filter(Boolean).join(" ");
+          ]
+            .filter(Boolean)
+            .join(" ");
 
           return (
             <button
@@ -512,13 +655,17 @@ function ExamCalendar({
         <strong>{formatLongDate(selectedDate)}</strong>
         {selectedExams.length ? (
           selectedExams.map((exam) => (
-            <span key={exam.id}>{exam.examName} · {exam.standardName}</span>
+            <span key={exam.id}>
+              {exam.examName} · {exam.standardName}
+            </span>
           ))
         ) : (
           <small>No examinations scheduled for this date.</small>
         )}
       </div>
-      <p className="dashboard-calendar-legend"><i /> Examination date</p>
+      <p className="dashboard-calendar-legend">
+        <i /> Examination date
+      </p>
     </section>
   );
 }
@@ -537,7 +684,8 @@ function ImportantAlerts({
   onRetryExams: () => void;
 }) {
   const soonExams = exams.filter((exam) => daysUntil(exam.startDate) <= 30);
-  const hasAlerts = soonExams.length > 0 || (attendanceReady && absentStudents > 0);
+  const hasAlerts =
+    soonExams.length > 0 || (attendanceReady && absentStudents > 0);
 
   return (
     <section className="panel dashboard-redesign-panel">
@@ -545,29 +693,53 @@ function ImportantAlerts({
       {!hasAlerts && !examsAvailable ? (
         <div className="dashboard-redesign-section-error" role="alert">
           <span>Examination alert data is unavailable.</span>
-          <button onClick={onRetryExams} type="button">Retry</button>
+          <button onClick={onRetryExams} type="button">
+            Retry
+          </button>
         </div>
       ) : !hasAlerts ? (
-        <p className="dashboard-redesign-empty">No alerts from the available exam and attendance records.</p>
+        <p className="dashboard-redesign-empty">
+          No alerts from the available exam and attendance records.
+        </p>
       ) : (
         <div className="dashboard-alert-list">
           {!examsAvailable && (
             <article>
-              <span className="dashboard-alert-icon exam"><CalendarDays size={15} /></span>
-              <div><strong>Examination alerts are unavailable</strong><small>Retry to check upcoming exam records</small></div>
-              <button onClick={onRetryExams} type="button">Retry</button>
+              <span className="dashboard-alert-icon exam">
+                <CalendarDays size={15} />
+              </span>
+              <div>
+                <strong>Examination alerts are unavailable</strong>
+                <small>Retry to check upcoming exam records</small>
+              </div>
+              <button onClick={onRetryExams} type="button">
+                Retry
+              </button>
             </article>
           )}
           {soonExams.length > 0 && (
             <article>
-              <span className="dashboard-alert-icon exam"><CalendarDays size={15} /></span>
-              <div><strong>{soonExams.length} upcoming examination{soonExams.length === 1 ? "" : "s"}</strong><small>Based on active examination dates</small></div>
+              <span className="dashboard-alert-icon exam">
+                <CalendarDays size={15} />
+              </span>
+              <div>
+                <strong>
+                  {soonExams.length} upcoming examination
+                  {soonExams.length === 1 ? "" : "s"}
+                </strong>
+                <small>Based on active examination dates</small>
+              </div>
             </article>
           )}
           {attendanceReady && absentStudents > 0 && (
             <article>
-              <span className="dashboard-alert-icon attendance"><ClipboardCheck size={15} /></span>
-              <div><strong>{absentStudents} students marked absent today</strong><small>Based on today&apos;s attendance records</small></div>
+              <span className="dashboard-alert-icon attendance">
+                <ClipboardCheck size={15} />
+              </span>
+              <div>
+                <strong>{absentStudents} students marked absent today</strong>
+                <small>Based on today&apos;s attendance records</small>
+              </div>
             </article>
           )}
         </div>
@@ -592,7 +764,11 @@ function UnavailablePanel({
 }
 
 function SectionSkeleton() {
-  return <div className="dashboard-redesign-section-loading" role="status">Loading…</div>;
+  return (
+    <div className="dashboard-redesign-section-loading" role="status">
+      Loading…
+    </div>
+  );
 }
 
 function SectionError({
@@ -605,7 +781,9 @@ function SectionError({
   return (
     <div className="dashboard-redesign-section-error" role="alert">
       <span>{message}</span>
-      <button onClick={onRetry} type="button">Retry</button>
+      <button onClick={onRetry} type="button">
+        Retry
+      </button>
     </div>
   );
 }
@@ -637,20 +815,35 @@ function getMetricValue(state: DashboardSectionState<number>) {
 
 function getUpcomingExams(exams: ExamRecord[], today: string) {
   return exams
-    .filter((exam) =>
-      exam.active &&
-      isValidDate(exam.startDate) &&
-      isValidDate(exam.endDate) &&
-      exam.endDate >= today
+    .filter(
+      (exam) =>
+        exam.active &&
+        isValidDate(exam.startDate) &&
+        isValidDate(exam.endDate) &&
+        exam.endDate >= today,
     )
     .sort((first, second) => first.startDate.localeCompare(second.startDate));
 }
 
 function getCalendarDays(month: Date) {
   const firstDay = new Date(month.getFullYear(), month.getMonth(), 1);
-  const gridStart = new Date(firstDay.getFullYear(), firstDay.getMonth(), -firstDay.getDay() + 1);
-  return Array.from({ length: 42 }, (_, index) => {
-    const date = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + index);
+  const gridStart = new Date(
+    firstDay.getFullYear(),
+    firstDay.getMonth(),
+    1 - firstDay.getDay(),
+  );
+  const dayCount = new Date(
+    month.getFullYear(),
+    month.getMonth() + 1,
+    0,
+  ).getDate();
+  const cellCount = Math.ceil((firstDay.getDay() + dayCount) / 7) * 7;
+  return Array.from({ length: cellCount }, (_, index) => {
+    const date = new Date(
+      gridStart.getFullYear(),
+      gridStart.getMonth(),
+      gridStart.getDate() + index,
+    );
     return getLocalDateString(date);
   });
 }
@@ -663,13 +856,20 @@ function getWeekDates(date: Date) {
     date.getDate() - daysSinceMonday,
   );
   return Array.from({ length: 7 }, (_, index) =>
-    getLocalDateString(new Date(start.getFullYear(), start.getMonth(), start.getDate() + index)),
+    getLocalDateString(
+      new Date(start.getFullYear(), start.getMonth(), start.getDate() + index),
+    ),
   );
 }
 
 function isDateInExamRange(date: string, exam: ExamRecord) {
-  return exam.active && isValidDate(exam.startDate) && isValidDate(exam.endDate)
-    && date >= exam.startDate && date <= exam.endDate;
+  return (
+    exam.active &&
+    isValidDate(exam.startDate) &&
+    isValidDate(exam.endDate) &&
+    date >= exam.startDate &&
+    date <= exam.endDate
+  );
 }
 
 function getExamTiming(date: string) {
@@ -685,8 +885,11 @@ function daysUntil(date: string) {
   if (!target) return Number.POSITIVE_INFINITY;
   const today = parseLocalDate(getLocalDateString());
   return today
-    ? Math.round((Date.UTC(target.getFullYear(), target.getMonth(), target.getDate())
-      - Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())) / 86_400_000)
+    ? Math.round(
+        (Date.UTC(target.getFullYear(), target.getMonth(), target.getDate()) -
+          Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())) /
+          86_400_000,
+      )
     : Number.POSITIVE_INFINITY;
 }
 
@@ -699,7 +902,9 @@ function parseLocalDate(value: string) {
 function isValidDate(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const date = new Date(`${value}T00:00:00`);
-  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+  return (
+    Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value
+  );
 }
 
 function getLocalDateString(date = new Date()) {
@@ -720,12 +925,30 @@ function formatWeekday(value: string) {
 
 function formatShortDate(value: string) {
   const date = parseLocalDate(value);
-  return date?.toLocaleDateString(undefined, { day: "numeric", month: "short" }) ?? value;
+  return (
+    date?.toLocaleDateString(undefined, { day: "numeric", month: "short" }) ??
+    value
+  );
 }
 
 function formatLongDate(value: string) {
   const date = parseLocalDate(value);
-  return date?.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" }) ?? value;
+  return (
+    date?.toLocaleDateString(undefined, {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }) ?? value
+  );
+}
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
 }
 
 function getErrorMessage(error: unknown, fallback: string) {

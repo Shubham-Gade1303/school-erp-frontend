@@ -2185,6 +2185,860 @@
     margin-top: 24px;
   }
 }
+
+/* Reference-sized SchoolERP shell and dashboard */
+.dashboard-shell {
+  height: 100vh;
+  height: 100dvh;
+  background: #f7f8fc;
+}
+
+.sidebar {
+  width: 155px;
+  flex: 0 0 155px;
+  padding: 11px 8px;
+  background: #172738;
+}
+
+.brand {
+  gap: 7px;
+  padding: 0 1px 17px;
+}
+
+.brand-mark {
+  width: 29px;
+  height: 29px;
+  background: #7650e8;
+}
+
+.brand strong {
+  font-size: 11px;
+}
+
+.brand small {
+  font-size: 8px;
+}
+
+.main-nav {
+  gap: 3px;
+}
+
+.nav-item,
+.logout {
+  min-height: 31px;
+  gap: 8px;
+  padding: 6px 9px;
+  border-radius: 5px;
+  font-size: 10px;
+}
+
+.nav-item.active {
+  background: #7650e8;
+}
+
+.logout {
+  margin-top: 8px;
+}
+
+.content-area {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border-radius: 0;
+  background: #f8f9fc;
+}
+
+.topbar {
+  position: relative;
+  z-index: 20;
+  flex: 0 0 39px;
+  height: 39px;
+  gap: 14px;
+  padding: 0 16px;
+  background: #fff;
+}
+
+.topbar-menu-mark {
+  display: grid;
+  place-items: center;
+  flex: 0 0 20px;
+  color: #64728a;
+}
+
+.search-box {
+  max-width: 395px;
+  height: 28px;
+  gap: 7px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 7px;
+  background: #f4f5f9;
+  box-shadow: none;
+}
+
+.search-box input {
+  background: transparent;
+  font-size: 9px;
+}
+
+.top-actions {
+  align-items: center;
+  gap: 14px;
+}
+
+.top-actions > button,
+.notification-menu > button {
+  width: 22px;
+  height: 28px;
+}
+
+.notification-menu > button[aria-expanded="true"] {
+  border-radius: 6px;
+}
+
+.profile {
+  gap: 7px;
+  padding-left: 12px;
+  border-left: 0;
+}
+
+.profile-avatar {
+  width: 28px;
+  height: 28px;
+  background: #a42645;
+  font-size: 10px;
+}
+
+.profile strong {
+  color: #20283a;
+  font-size: 9px;
+}
+
+.profile small {
+  font-size: 8px;
+}
+
+.dashboard-redesign {
+  width: 100%;
+  max-width: 1480px;
+  flex: 1 0 auto;
+  margin: 0 auto;
+  padding: 13px 17px 18px;
+  background: #f8f9fc;
+}
+
+.dashboard-redesign .dashboard-hero-header {
+  min-height: 61px;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.dashboard-heading-kicker {
+  margin-bottom: 3px;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.dashboard-redesign .dashboard-heading-title {
+  color: #101b31;
+  font-size: 20px;
+  line-height: 1.22;
+  letter-spacing: -0.035em;
+}
+
+.dashboard-redesign .dashboard-heading-description {
+  margin-top: 4px;
+  color: #68758a;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.dashboard-date-pill {
+  min-height: 30px;
+  gap: 6px;
+  padding: 0 10px;
+  border-color: #e6e9f0;
+  border-radius: 7px;
+  color: #253148;
+  font-size: 10px;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(27, 38, 64, 0.04);
+}
+
+.dashboard-academic-chevron {
+  margin-left: 8px;
+  transform: rotate(90deg);
+}
+
+.dashboard-redesign-stats {
+  gap: 10px;
+  margin-bottom: 11px;
+}
+
+.dashboard-redesign-stat {
+  min-height: 76px;
+  gap: 12px;
+  padding: 10px 12px;
+  border-color: #eceef5;
+  border-radius: 9px;
+  box-shadow: 0 3px 10px rgba(28, 40, 64, 0.025);
+}
+
+.dashboard-redesign-stat:nth-child(1) {
+  background: #f5f3ff;
+}
+
+.dashboard-redesign-stat:nth-child(2) {
+  background: #eff5ff;
+}
+
+.dashboard-redesign-stat:nth-child(3) {
+  background: #fff9ef;
+}
+
+.dashboard-redesign-stat:nth-child(4) {
+  background: #effaf5;
+}
+
+.dashboard-redesign-stat-icon {
+  width: 42px;
+  height: 42px;
+  flex-basis: 42px;
+  border-radius: 10px;
+}
+
+.dashboard-redesign-stat-icon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.dashboard-redesign-stat-icon.purple {
+  color: #6b42f4;
+  background: #e9e3ff;
+}
+
+.dashboard-redesign-stat-icon.blue {
+  color: #315dff;
+  background: #e0ebff;
+}
+
+.dashboard-redesign-stat-icon.orange {
+  color: #f08a00;
+  background: #fff0d3;
+}
+
+.dashboard-redesign-stat-icon.green {
+  color: #20a774;
+  background: #dcf6e9;
+}
+
+.dashboard-redesign-stat-copy span {
+  color: #5e6a80;
+  font-size: 10px;
+}
+
+.dashboard-redesign-stat-copy strong {
+  margin-top: 2px;
+  color: #151f34;
+  font-size: 20px;
+  line-height: 1.05;
+}
+
+.dashboard-redesign-stat-copy small.dashboard-redesign-stat-note {
+  margin-top: 2px;
+  font-size: 9px;
+}
+
+.dashboard-redesign-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-areas:
+    "attendance attendance attendance attendance attendance schedule schedule schedule schedule . . ."
+    "exams exams exams exams exams calendar calendar calendar calendar admissions admissions admissions"
+    "performers performers performers performers fees fees fees fees alerts alerts alerts alerts";
+  grid-template-rows: 192px 193px minmax(154px, auto);
+  align-items: stretch;
+  gap: 10px;
+}
+
+.dashboard-redesign-column {
+  display: contents;
+}
+
+.dashboard-redesign-column:first-child > :nth-child(1) {
+  grid-area: attendance;
+  width: calc(100% + 2vw);
+}
+
+.dashboard-redesign-column:first-child > :nth-child(2) {
+  grid-area: schedule;
+  width: 24.3vw;
+  max-width: 100%;
+  transform: translateX(3vw);
+}
+
+.dashboard-redesign-column:first-child > :nth-child(3) {
+  grid-area: admissions;
+}
+
+.dashboard-redesign-column:last-child > :nth-child(1) {
+  grid-area: exams;
+}
+
+.dashboard-redesign-column:last-child > :nth-child(2) {
+  grid-area: calendar;
+}
+
+.dashboard-redesign-column:last-child > :nth-child(3) {
+  grid-area: performers;
+}
+
+.dashboard-redesign-column:last-child > :nth-child(4) {
+  grid-area: fees;
+}
+
+.dashboard-redesign-column:last-child > :nth-child(5) {
+  grid-area: alerts;
+}
+
+.dashboard-redesign-panel {
+  overflow: hidden;
+  border-color: #e9edf4;
+  border-radius: 9px;
+  box-shadow: 0 3px 10px rgba(28, 40, 64, 0.025);
+}
+
+.dashboard-redesign-panel-header {
+  min-height: 37px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f2f6;
+}
+
+.dashboard-redesign-panel-header h2 {
+  color: #172238;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+}
+
+.dashboard-text-link {
+  font-size: 9px;
+}
+
+.dashboard-attendance-chart {
+  grid-template-columns: 31px minmax(0, 1fr);
+  gap: 6px;
+  min-height: 0;
+  height: calc(100% - 37px);
+  padding: 10px 12px 8px;
+}
+
+.dashboard-chart-axis {
+  padding-bottom: 19px;
+  font-size: 8px;
+}
+
+.dashboard-chart-bars {
+  gap: 6px;
+}
+
+.dashboard-chart-day {
+  grid-template-rows: minmax(0, 1fr) 19px;
+}
+
+.dashboard-chart-track {
+  min-height: 0;
+}
+
+.dashboard-chart-bar {
+  width: min(58%, 26px);
+  border-radius: 4px 4px 0 0;
+  background: #7650e8;
+}
+
+.dashboard-chart-value {
+  font-size: 8px;
+}
+
+.dashboard-chart-day > small {
+  font-size: 9px;
+}
+
+.dashboard-chart-caption {
+  font-size: 8px;
+}
+
+.dashboard-redesign-empty,
+.dashboard-redesign-section-loading,
+.dashboard-redesign-section-error {
+  padding: 12px;
+  font-size: 10px;
+}
+
+.dashboard-redesign-column > .dashboard-redesign-panel:not(:first-child) > .dashboard-redesign-empty,
+.dashboard-redesign-column:first-child > :nth-child(2) > .dashboard-redesign-empty,
+.dashboard-redesign-column:first-child > :nth-child(3) > .dashboard-redesign-empty {
+  display: grid;
+  place-items: center;
+  min-height: 100px;
+  height: calc(100% - 37px);
+  padding: 12px;
+  text-align: center;
+}
+
+.dashboard-exams-table-wrap {
+  height: calc(100% - 37px);
+  overflow: auto;
+}
+
+.dashboard-exams-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: #202b40;
+  font-size: 9px;
+}
+
+.dashboard-exams-table th {
+  height: 24px;
+  padding: 0 8px;
+  color: #718097;
+  background: #f7f8fb;
+  font-size: 9px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.dashboard-exams-table td {
+  height: 29px;
+  overflow: hidden;
+  padding: 0 8px;
+  border-bottom: 1px solid #f0f2f6;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-exams-table th:first-child,
+.dashboard-exams-table td:first-child {
+  width: 24%;
+}
+
+.dashboard-exams-table th:nth-child(2),
+.dashboard-exams-table td:nth-child(2) {
+  width: 29%;
+}
+
+.dashboard-exams-table th:nth-child(3),
+.dashboard-exams-table td:nth-child(3) {
+  width: 19%;
+}
+
+.dashboard-exams-table th:last-child,
+.dashboard-exams-table td:last-child {
+  width: 28%;
+}
+
+.dashboard-exam-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: #3775f6;
+}
+
+.dashboard-exam-dot.tomorrow {
+  background: #ff8a43;
+}
+
+.dashboard-exam-status {
+  display: inline-block;
+  padding: 3px 6px;
+  border-radius: 5px;
+  color: #1d5fea;
+  background: #e8f0ff;
+  font-size: 8px;
+}
+
+.dashboard-exam-status.tomorrow,
+.dashboard-exam-status.today {
+  color: #e66c00;
+  background: #fff0d7;
+}
+
+.dashboard-calendar-controls {
+  gap: 4px;
+}
+
+.dashboard-calendar-controls strong {
+  min-width: 98px;
+  color: #202a3d;
+  font-size: 10px;
+}
+
+.dashboard-calendar-controls button {
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 4px;
+}
+
+.dashboard-calendar-grid {
+  gap: 0 2px;
+  padding: 5px 10px 3px;
+}
+
+.dashboard-calendar-weekday {
+  padding-bottom: 2px;
+  font-size: 8px;
+}
+
+.dashboard-calendar-day {
+  height: 19px;
+  max-height: 19px;
+  aspect-ratio: auto;
+  font-size: 8px;
+}
+
+.dashboard-calendar-day.has-exam:not(.is-selected)::after {
+  bottom: 1px;
+  width: 3px;
+  height: 3px;
+}
+
+.dashboard-calendar-selected {
+  min-height: 28px;
+  gap: 2px;
+  margin: 0 11px;
+  padding: 5px 0 3px;
+  font-size: 8px;
+}
+
+.dashboard-calendar-selected strong,
+.dashboard-calendar-selected span,
+.dashboard-calendar-selected small {
+  font-size: 8px;
+}
+
+.dashboard-calendar-legend {
+  margin: 0 11px 5px;
+  font-size: 8px;
+}
+
+.dashboard-calendar-legend i {
+  width: 6px;
+  height: 6px;
+}
+
+.dashboard-alert-list {
+  padding: 1px 10px;
+}
+
+.dashboard-alert-list article {
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 7px;
+  min-height: 37px;
+}
+
+.dashboard-alert-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+}
+
+.dashboard-alert-list strong {
+  font-size: 9px;
+}
+
+.dashboard-alert-list small {
+  margin-top: 2px;
+  font-size: 8px;
+}
+
+.dashboard-fee-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  height: calc(100% - 37px);
+  padding: 8px 12px;
+}
+
+.dashboard-fee-donut {
+  display: grid;
+  place-items: center;
+  width: 104px;
+  height: 104px;
+  flex: 0 0 104px;
+  border-radius: 50%;
+}
+
+.dashboard-fee-donut::before {
+  position: absolute;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background: #fff;
+  content: "";
+}
+
+.dashboard-fee-donut > span {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+}
+
+.dashboard-fee-donut strong {
+  color: #182238;
+  font-size: 13px;
+}
+
+.dashboard-fee-donut small {
+  color: #738097;
+  font-size: 8px;
+}
+
+.dashboard-fee-legend {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+}
+
+.dashboard-fee-legend span {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  color: #66738a;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.dashboard-fee-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dashboard-fee-legend i.collected {
+  background: #7650e8;
+}
+
+.dashboard-fee-legend i.pending {
+  background: #a8c9ff;
+}
+
+.dashboard-fee-legend strong {
+  color: #253148;
+  font-size: 9px;
+}
+
+.notification-dropdown {
+  top: calc(100% + 13px);
+  right: -9px;
+  width: min(248px, calc(100vw - 24px));
+  border-color: #e9edf4;
+  border-radius: 9px;
+  box-shadow: 0 10px 28px rgba(25, 33, 54, 0.14);
+}
+
+.notification-dropdown-heading {
+  align-items: center;
+  padding: 11px 12px 9px;
+}
+
+.notification-dropdown-heading strong {
+  color: #1b2539;
+  font-size: 12px;
+}
+
+.notification-dropdown-heading small {
+  margin-top: 3px;
+  font-size: 8px;
+}
+
+.notification-dropdown .notification-close {
+  width: 21px;
+  height: 21px;
+}
+
+.notification-list {
+  max-height: 270px;
+  padding: 2px 10px;
+}
+
+.notification-list li {
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 8px;
+  min-height: 54px;
+}
+
+.notification-exam-icon {
+  width: 29px;
+  height: 29px;
+  border-radius: 7px;
+}
+
+.notification-copy strong {
+  color: #202b40;
+  font-size: 9px;
+}
+
+.notification-copy small {
+  margin-top: 3px;
+  font-size: 8px;
+}
+
+.notification-dropdown-state {
+  padding: 16px 12px;
+  font-size: 10px;
+}
+
+.notification-view-all {
+  width: calc(100% - 20px);
+  min-height: 29px;
+  margin: 2px 10px 10px;
+  border-color: #d7ceff;
+  border-radius: 6px;
+  font-size: 9px;
+}
+
+@media (max-width: 1050px) {
+  .dashboard-redesign-grid {
+    grid-template-areas:
+      "attendance attendance attendance attendance attendance attendance schedule schedule schedule schedule schedule schedule"
+      "exams exams exams exams calendar calendar calendar calendar admissions admissions admissions admissions"
+      "performers performers performers performers fees fees fees fees alerts alerts alerts alerts";
+  }
+
+  .dashboard-redesign-column:first-child > :nth-child(1) {
+    width: 100%;
+  }
+
+  .dashboard-redesign-column:first-child > :nth-child(2) {
+    width: 100%;
+    transform: none;
+  }
+}
+
+@media (max-width: 800px) {
+  .dashboard-shell {
+    display: block;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    width: 100%;
+    flex-basis: auto;
+  }
+
+  .content-area {
+    min-height: calc(100vh - 100px);
+  }
+
+  .topbar {
+    padding: 0 12px;
+  }
+
+  .search-box {
+    max-width: none;
+  }
+
+  .dashboard-redesign {
+    padding: 14px 14px 20px;
+  }
+
+  .dashboard-redesign-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "attendance attendance"
+      "schedule exams"
+      "calendar calendar"
+      "admissions performers"
+      "fees alerts";
+    grid-template-rows: auto;
+  }
+
+  .dashboard-redesign-grid > .dashboard-redesign-column > * {
+    min-height: 185px;
+  }
+
+  .dashboard-redesign-grid .dashboard-calendar-grid {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+}
+
+@media (max-width: 520px) {
+  .topbar {
+    gap: 8px;
+    padding: 0 9px;
+  }
+
+  .search-box {
+    height: 27px;
+  }
+
+  .top-actions {
+    gap: 7px;
+  }
+
+  .profile {
+    gap: 0;
+    padding-left: 4px;
+  }
+
+  .profile span,
+  .profile > svg {
+    display: none;
+  }
+
+  .dashboard-redesign {
+    padding: 12px 10px 16px;
+  }
+
+  .dashboard-redesign .dashboard-hero-header {
+    min-height: 0;
+    margin-bottom: 12px;
+  }
+
+  .dashboard-redesign .dashboard-heading-title {
+    font-size: 19px;
+  }
+
+  .dashboard-redesign-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-redesign-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "attendance"
+      "schedule"
+      "exams"
+      "calendar"
+      "admissions"
+      "performers"
+      "fees"
+      "alerts";
+  }
+
+  .dashboard-redesign-grid > .dashboard-redesign-column > * {
+    min-height: 175px;
+  }
+
+  .dashboard-redesign-grid > .dashboard-redesign-column > .dashboard-redesign-panel:has(.dashboard-calendar-grid) {
+    min-height: 225px;
+  }
+
+  .notification-dropdown {
+    position: fixed;
+    top: 46px;
+    right: 10px;
+  }
+}
 @media (max-height: 650px) {
   .login-form-panel {
     padding-top: 16px;
@@ -3335,7 +4189,7 @@
   border-radius: 9px;
   color: #344054;
   background: #fff;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -4171,5 +5025,377 @@
   .dashboard-redesign-panel-header {
     padding-right: 11px;
     padding-left: 11px;
+  }
+}
+
+/* Keep the reference layout last so the older dashboard rules cannot override it. */
+.dashboard-page-shell.dashboard-redesign {
+  display: block;
+  width: 100%;
+  max-width: none;
+  flex: 1 0 auto;
+  margin: 0;
+  padding: 16px 17px 18px;
+  gap: 0;
+  background: #f8f9fc;
+}
+
+.content-area {
+  scrollbar-width: none;
+}
+
+.content-area::-webkit-scrollbar {
+  display: none;
+}
+
+.dashboard-redesign .dashboard-hero-header {
+  height: auto;
+  min-height: 58px;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.dashboard-redesign .dashboard-heading-title {
+  color: #101b31;
+  font-size: 26px;
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+}
+
+.dashboard-heading-kicker {
+  margin-bottom: 5px;
+  font-size: 12px;
+}
+
+.dashboard-redesign .dashboard-heading-description {
+  margin: 4px 0 0;
+  color: #68758a;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.dashboard-redesign-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.dashboard-redesign-stat {
+  height: 76px;
+  min-height: 76px;
+  gap: 12px;
+  padding: 10px 12px;
+  border-color: #eceef5;
+  border-radius: 9px;
+  box-shadow: 0 3px 10px rgba(28, 40, 64, 0.025);
+}
+
+.dashboard-redesign-stat:nth-child(1) { background: #f5f3ff; }
+.dashboard-redesign-stat:nth-child(2) { background: #eff5ff; }
+.dashboard-redesign-stat:nth-child(3) { background: #fff9ef; }
+.dashboard-redesign-stat:nth-child(4) { background: #effaf5; }
+
+.dashboard-redesign-stat-icon {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 10px;
+}
+
+.dashboard-redesign-stat-icon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.dashboard-redesign-stat-icon.purple { color: #6b42f4; background: #e9e3ff; }
+.dashboard-redesign-stat-icon.blue { color: #315dff; background: #e0ebff; }
+.dashboard-redesign-stat-icon.orange { color: #f08a00; background: #fff0d3; }
+.dashboard-redesign-stat-icon.green { color: #20a774; background: #dcf6e9; }
+
+.dashboard-redesign-stat-copy span {
+  color: #5e6a80;
+  font-size: 13px;
+}
+
+.dashboard-redesign-stat-copy strong {
+  margin-top: 2px;
+  color: #151f34;
+  font-size: 23px;
+  line-height: 1.05;
+}
+
+.dashboard-redesign-stat-copy small.dashboard-redesign-stat-note {
+  margin-top: 2px;
+  font-size: 11px;
+}
+
+.dashboard-redesign-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-areas:
+    "attendance attendance attendance attendance attendance schedule schedule schedule schedule . . ."
+    "exams exams exams exams exams calendar calendar calendar calendar admissions admissions admissions"
+    "performers performers performers performers fees fees fees fees alerts alerts alerts alerts";
+  grid-template-rows: 192px 193px minmax(154px, auto);
+  align-items: stretch;
+  gap: 10px;
+}
+
+.dashboard-redesign-column { display: contents; }
+
+.dashboard-redesign-column:first-child > :nth-child(1) {
+  grid-area: attendance;
+  width: calc(100% + 2vw);
+}
+
+.dashboard-redesign-column:first-child > :nth-child(2) {
+  grid-area: schedule;
+  width: 24.3vw;
+  max-width: 100%;
+  transform: translateX(3vw);
+}
+
+.dashboard-redesign-column:first-child > :nth-child(3) {
+  grid-area: admissions;
+  width: calc(100% - 5px);
+  transform: translateX(10px);
+}
+.dashboard-redesign-column:last-child > :nth-child(1) { grid-area: exams; }
+.dashboard-redesign-column:last-child > :nth-child(2) { grid-area: calendar; }
+.dashboard-redesign-column:last-child > :nth-child(3) { grid-area: performers; }
+.dashboard-redesign-column:last-child > :nth-child(4) { grid-area: fees; }
+.dashboard-redesign-column:last-child > :nth-child(5) { grid-area: alerts; }
+
+.dashboard-redesign-column:last-child > :nth-child(1) {
+  width: calc(100% - 12px);
+}
+
+.dashboard-redesign-column:last-child > :nth-child(2) {
+  width: calc(100% + 23px);
+  transform: translateX(-12px);
+}
+
+.dashboard-redesign-column:last-child > :nth-child(3) {
+  width: calc(100% - 22px);
+}
+
+.dashboard-redesign-column:last-child > :nth-child(4) {
+  width: calc(100% + 16px);
+  transform: translateX(-8px);
+}
+
+.dashboard-redesign-column:last-child > :nth-child(5) {
+  width: calc(100% - 6px);
+  transform: translateX(12px);
+}
+
+.dashboard-redesign-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid #e9edf4;
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 3px 10px rgba(28, 40, 64, 0.025);
+}
+
+.dashboard-redesign-panel-header {
+  min-height: 37px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f2f6;
+}
+
+.dashboard-redesign-panel-header h2 {
+  color: #172238;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+.dashboard-text-link { font-size: 11px; }
+
+.dashboard-attendance-chart {
+  grid-template-columns: 31px minmax(0, 1fr);
+  gap: 6px;
+  min-height: 0;
+  height: calc(100% - 37px);
+  padding: 10px 12px 8px;
+}
+
+.dashboard-chart-axis { padding-bottom: 19px; font-size: 10px; }
+.dashboard-chart-bars { gap: 6px; }
+.dashboard-chart-day { grid-template-rows: minmax(0, 1fr) 19px; }
+.dashboard-chart-track { min-height: 0; }
+.dashboard-chart-bar { width: min(58%, 26px); border-radius: 4px 4px 0 0; background: #7650e8; }
+.dashboard-chart-value,
+.dashboard-chart-day > small { font-size: 10px; }
+.dashboard-chart-caption { font-size: 11px; }
+
+.dashboard-redesign-empty,
+.dashboard-redesign-section-loading,
+.dashboard-redesign-section-error {
+  padding: 12px;
+  font-size: 12px;
+}
+
+.dashboard-redesign-column:first-child > :nth-child(2) > .dashboard-redesign-empty,
+.dashboard-redesign-column:first-child > :nth-child(3) > .dashboard-redesign-empty,
+.dashboard-redesign-column:last-child > :nth-child(3) > .dashboard-redesign-empty,
+.dashboard-redesign-column:last-child > :nth-child(4) > .dashboard-redesign-empty {
+  display: grid;
+  min-height: 100px;
+  height: calc(100% - 37px);
+  place-items: center;
+  padding: 12px;
+  text-align: center;
+}
+
+.dashboard-exams-table-wrap { height: calc(100% - 37px); overflow: auto; }
+.dashboard-exams-table { width: 100%; border-collapse: collapse; table-layout: fixed; color: #202b40; font-size: 11px; }
+.dashboard-exams-table th { height: 24px; padding: 0 8px; color: #718097; background: #f7f8fb; font-size: 11px; font-weight: 600; text-align: left; }
+.dashboard-exams-table td { height: 29px; overflow: hidden; padding: 0 8px; border-bottom: 1px solid #f0f2f6; text-overflow: ellipsis; white-space: nowrap; }
+.dashboard-exams-table th:first-child,
+.dashboard-exams-table td:first-child { width: 24%; }
+.dashboard-exams-table th:nth-child(2),
+.dashboard-exams-table td:nth-child(2) { width: 29%; }
+.dashboard-exams-table th:nth-child(3),
+.dashboard-exams-table td:nth-child(3) { width: 19%; }
+.dashboard-exams-table th:last-child,
+.dashboard-exams-table td:last-child { width: 28%; }
+.dashboard-exam-dot { display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: #3775f6; }
+.dashboard-exam-dot.tomorrow { background: #ff8a43; }
+.dashboard-exam-status { display: inline-block; padding: 3px 6px; border-radius: 5px; color: #1d5fea; background: #e8f0ff; font-size: 10px; }
+.dashboard-exam-status.tomorrow,
+.dashboard-exam-status.today { color: #e66c00; background: #fff0d7; }
+
+.dashboard-calendar-controls { gap: 4px; }
+.dashboard-calendar-controls strong { min-width: 98px; color: #202a3d; font-size: 12px; }
+.dashboard-calendar-controls button { width: 20px; height: 20px; border: 0; border-radius: 4px; }
+.dashboard-calendar-grid { gap: 0 2px; padding: 5px 10px 3px; }
+.dashboard-calendar-weekday { padding-bottom: 2px; font-size: 10px; }
+.dashboard-calendar-day { height: 19px; max-height: 19px; aspect-ratio: auto; font-size: 10px; }
+.dashboard-calendar-day.has-exam:not(.is-selected)::after { bottom: 1px; width: 3px; height: 3px; }
+.dashboard-calendar-selected { min-height: 28px; gap: 2px; margin: 0 11px; padding: 5px 0 3px; font-size: 10px; }
+.dashboard-calendar-selected strong,
+.dashboard-calendar-selected span,
+.dashboard-calendar-selected small { font-size: 10px; }
+.dashboard-calendar-legend { margin: 0 11px 5px; font-size: 10px; }
+.dashboard-calendar-legend i { width: 6px; height: 6px; }
+
+.dashboard-alert-list { padding: 1px 10px; }
+.dashboard-alert-list article { grid-template-columns: 28px minmax(0, 1fr); gap: 7px; min-height: 37px; }
+.dashboard-alert-icon { width: 26px; height: 26px; border-radius: 6px; }
+.dashboard-alert-list strong { font-size: 11px; }
+.dashboard-alert-list small { margin-top: 2px; font-size: 10px; }
+.dashboard-fee-summary { display: flex; height: calc(100% - 37px); align-items: center; justify-content: center; gap: 22px; padding: 8px 12px; }
+.dashboard-fee-donut { display: grid; width: 104px; height: 104px; flex: 0 0 104px; place-items: center; border-radius: 50%; }
+.dashboard-fee-donut::before { position: absolute; width: 74px; height: 74px; border-radius: 50%; background: #fff; content: ""; }
+.dashboard-fee-donut > span { position: relative; display: grid; justify-items: center; gap: 3px; }
+.dashboard-fee-donut strong { color: #182238; font-size: 13px; }
+.dashboard-fee-donut small { color: #738097; font-size: 10px; }
+.dashboard-fee-legend { display: grid; gap: 9px; min-width: 0; }
+.dashboard-fee-legend span { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; gap: 5px; color: #66738a; font-size: 11px; white-space: nowrap; }
+.dashboard-fee-legend i { width: 8px; height: 8px; border-radius: 50%; }
+.dashboard-fee-legend i.collected { background: #7650e8; }
+.dashboard-fee-legend i.pending { background: #a8c9ff; }
+.dashboard-fee-legend strong { color: #253148; font-size: 11px; }
+
+.notification-dropdown { top: calc(100% + 13px); right: -9px; width: min(248px, calc(100vw - 24px)); border-color: #e9edf4; border-radius: 9px; box-shadow: 0 10px 28px rgba(25, 33, 54, 0.14); }
+.notification-dropdown-heading { align-items: center; padding: 11px 12px 9px; }
+.notification-dropdown-heading strong { color: #1b2539; font-size: 12px; }
+.notification-dropdown-heading small { margin-top: 3px; font-size: 8px; }
+.notification-dropdown .notification-close { width: 21px; height: 21px; }
+.notification-list { max-height: 270px; padding: 2px 10px; }
+.notification-list li { grid-template-columns: 30px minmax(0, 1fr); gap: 8px; min-height: 54px; }
+.notification-exam-icon { width: 29px; height: 29px; border-radius: 7px; }
+.notification-copy strong { color: #202b40; font-size: 9px; }
+.notification-copy small { margin-top: 3px; font-size: 8px; }
+.notification-dropdown-state { padding: 16px 12px; font-size: 10px; }
+.notification-view-all { width: calc(100% - 20px); min-height: 29px; margin: 2px 10px 10px; border-color: #d7ceff; border-radius: 6px; font-size: 9px; }
+
+@media (max-width: 1050px) {
+  .dashboard-redesign-grid {
+    grid-template-areas:
+      "attendance attendance attendance attendance attendance attendance schedule schedule schedule schedule schedule schedule"
+      "exams exams exams exams calendar calendar calendar calendar admissions admissions admissions admissions"
+      "performers performers performers performers fees fees fees fees alerts alerts alerts alerts";
+  }
+  .dashboard-redesign-column:first-child > :nth-child(1),
+  .dashboard-redesign-column:first-child > :nth-child(2),
+  .dashboard-redesign-column:last-child > :nth-child(n) { width: 100%; transform: none; }
+}
+
+@media (max-width: 800px) {
+  .dashboard-shell {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .dashboard-redesign-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "attendance attendance"
+      "schedule exams"
+      "calendar calendar"
+      "admissions performers"
+      "fees alerts";
+    grid-template-rows: auto;
+  }
+  .dashboard-redesign-grid > .dashboard-redesign-column > * { min-height: 185px; }
+  .dashboard-calendar-grid { padding-right: 14px; padding-left: 14px; }
+}
+
+@media (max-width: 520px) {
+  .dashboard-page-shell.dashboard-redesign { padding: 12px 10px 16px; }
+  .dashboard-redesign .dashboard-hero-header { height: auto; min-height: 0; margin-bottom: 12px; flex-direction: column; }
+  .dashboard-redesign .dashboard-heading-title { font-size: 24px; }
+  .dashboard-redesign-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .dashboard-redesign-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "attendance" "schedule" "exams" "calendar"
+      "admissions" "performers" "fees" "alerts";
+  }
+  .dashboard-redesign-grid > .dashboard-redesign-column > * { min-height: 175px; }
+  .dashboard-redesign-grid > .dashboard-redesign-column > .dashboard-redesign-panel:has(.dashboard-calendar-grid) { min-height: 225px; }
+  .notification-dropdown { position: fixed; top: 46px; right: 10px; }
+}
+
+@media (max-width: 800px) {
+  .sidebar {
+    box-sizing: border-box;
+    overflow: visible;
+    padding: 10px 12px;
+  }
+
+  .brand {
+    padding-bottom: 10px;
+  }
+
+  .main-nav {
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+  }
+
+  .nav-item {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 36px;
+    white-space: nowrap;
+  }
+
+  .logout {
+    flex: 0 0 auto;
+    width: auto;
+    margin: 0 0 0 4px;
+    border-top: 0;
+    border-left: 1px solid #2d3b4d;
+    padding: 6px 12px;
   }
 }

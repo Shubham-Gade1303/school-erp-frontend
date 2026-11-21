@@ -72,7 +72,9 @@ export function AcademicStep({
                 ? "Loading divisions..."
                 : sections.length
                   ? "Select division"
-                  : "Choose year and standard first"}
+                  : workflow.academicYearId && workflow.standardId
+                    ? "No active divisions available"
+                    : "Choose year and standard first"}
             </option>
             {sections.map((section) => (
               <option key={section.id} value={section.id}>

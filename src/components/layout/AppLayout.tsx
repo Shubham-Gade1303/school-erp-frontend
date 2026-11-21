@@ -10,6 +10,8 @@ import {
   LayoutDashboard,
   LogOut,
   MessageCircle,
+  Menu,
+  Search,
   Settings,
   ShieldCheck,
   UserPlus,
@@ -139,12 +141,17 @@ export function AppLayout() {
       </aside>
       <section className="content-area">
         <header className="topbar">
+          <span aria-hidden="true" className="topbar-menu-mark"><Menu size={17} /></span>
+          <label className="search-box">
+            <Search aria-hidden="true" size={14} />
+            <input aria-label="Search students, teachers, exams" placeholder="Search students, teachers, exams..." />
+          </label>
           <div className="top-actions">
             <div className="notification-menu" ref={notificationMenuRef}>
               <button
                 aria-controls="school-notifications"
                 aria-expanded={isNotificationsOpen}
-                aria-label="Notifications"
+                aria-label="Exam reminders"
                 onClick={toggleNotifications}
                 type="button"
               >
@@ -152,7 +159,7 @@ export function AppLayout() {
               </button>
               {isNotificationsOpen && (
                 <section
-                  aria-label="Notifications"
+                  aria-label="Exam reminders"
                   className="notification-dropdown"
                   id="school-notifications"
                   role="dialog"
@@ -160,7 +167,7 @@ export function AppLayout() {
                   <div className="notification-dropdown-heading">
                     <div>
                       <strong>Notifications</strong>
-                      <small>Exam reminders from school records</small>
+                      <small>Upcoming examination reminders</small>
                     </div>
                     <button
                       aria-label="Close notifications"
@@ -201,15 +208,11 @@ export function AppLayout() {
                     }}
                     type="button"
                   >
-                    View examinations
+                    View Examinations
                   </button>
-                  <p className="notification-disclaimer">
-                    The frontend has no notification or read-status API configured.
-                  </p>
                 </section>
               )}
             </div>
-            <button className="message-button" aria-label="Messages" type="button"><MessageCircle size={17} /><i /></button>
             <button aria-label="Help" type="button"><CircleHelp size={17} /></button>
           </div>
           <div className="profile">

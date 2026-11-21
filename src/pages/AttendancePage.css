@@ -12,6 +12,7 @@
   --attendance-red-light: #fff0f1;
   width: 100%;
   max-width: 1280px;
+  flex: 0 0 auto;
   min-height: 100%;
   margin: 0 auto;
   padding: 0 24px 28px;

@@ -25,6 +25,7 @@ export interface ClassSection {
   sectionName: string;
   standardId?: number;
   academicYearId?: number;
+  active?: boolean;
 }
 
 export interface AddressRecord {
