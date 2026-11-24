@@ -16,7 +16,7 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import { DocumentDownloadButton } from "../../components/DocumentDownloadButton";
 import {
   getAcademicYears,
@@ -180,12 +180,16 @@ export function StudentsPage() {
     1,
     Math.ceil(filteredStudents.length / PAGE_SIZE),
   );
+  const currentPage = Math.min(page, totalPages);
   const visibleStudents = filteredStudents.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE,
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
   );
   const activeStudents = students.filter((student) => student.active).length;
 
+  // The loaders are stable for this page lifecycle; rerunning them when their
+  // implementations are recreated would duplicate the initial requests.
+  // oxlint-disable react-hooks/exhaustive-deps
   useEffect(() => {
     void loadAcademicYears();
     void loadStandards();
@@ -203,10 +207,7 @@ export function StudentsPage() {
       profileController.current = null;
     };
   }, []);
-
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
+  // oxlint-enable react-hooks/exhaustive-deps
 
   async function loadAcademicYears() {
     if (academicYearsInFlight.current) return;
@@ -845,10 +846,10 @@ export function StudentsPage() {
             />
             {filteredStudents.length > PAGE_SIZE && (
               <div className="student-pagination">
-                <span>Page {page} of {totalPages}</span>
+                <span>Page {currentPage} of {totalPages}</span>
                 <div>
-                  <button className="secondary-button" disabled={page === 1} onClick={() => setPage((current) => current - 1)} type="button">Previous</button>
-                  <button className="secondary-button" disabled={page === totalPages} onClick={() => setPage((current) => current + 1)} type="button">Next</button>
+                  <button className="secondary-button" disabled={currentPage === 1} onClick={() => setPage((current) => current - 1)} type="button">Previous</button>
+                  <button className="secondary-button" disabled={currentPage === totalPages} onClick={() => setPage((current) => current + 1)} type="button">Next</button>
                 </div>
               </div>
             )}
@@ -885,6 +886,7 @@ export function StudentsPage() {
               </p>
             )}
             <StudentForm
+              key={formStudent.id}
               isSaving={isSaving}
               onCancel={() => {
                 setEditError("");
@@ -1181,13 +1183,14 @@ function StudentProfileModal({
             onRetry={() => onRetry("marks")}
             title="Marks"
           >
-            <ProfileTable headers={["Exam", "Subject", "Total", "Obtained"]}>
+            <ProfileTable headers={["Exam", "Subject", "Maximum", "Obtained", "Remarks"]}>
               {data.marks.map((mark) => (
                 <tr key={mark.id}>
                   <td>{mark.examName}</td>
                   <td>{mark.subjectName}</td>
-                  <td>{mark.totalMarks}</td>
+                  <td>{mark.maximumMarks ?? mark.totalMarks}</td>
                   <td>{mark.marksObtained}</td>
+                  <td>{mark.remarks || "-"}</td>
                 </tr>
               ))}
             </ProfileTable>
@@ -1210,17 +1213,7 @@ function StudentProfileModal({
                   <td>{summary.marksObtained}</td>
                   <td>{summary.percentage}%</td>
                   <td>{summary.grade}</td>
-                  <td>
-                    <span
-                      className={
-                        summary.resultStatus.toUpperCase() === "PASS"
-                          ? "status-badge active"
-                          : "status-badge inactive"
-                      }
-                    >
-                      {summary.resultStatus}
-                    </span>
-                  </td>
+                  <td>{summary.resultStatus}</td>
                 </tr>
               ))}
             </ProfileTable>
@@ -1234,12 +1227,15 @@ function StudentProfileModal({
             title="Activities"
           >
             <ProfileTable
-              headers={["Activity", "Participation Date", "Remarks"]}
+              headers={["Activity", "Participation Date", "Role", "Result", "Position", "Remarks"]}
             >
               {data.activities.map((activity) => (
                 <tr key={activity.id}>
                   <td>{activity.activityName}</td>
                   <td>{formatDate(activity.participationDate)}</td>
+                  <td>{activity.role || "-"}</td>
+                  <td>{activity.result || "-"}</td>
+                  <td>{activity.position || "-"}</td>
                   <td>{activity.remarks || "-"}</td>
                 </tr>
               ))}
@@ -1306,18 +1302,18 @@ function StudentProfileModal({
                 <tr key={promotion.id}>
                   <td>
                     {[
-                      promotion.fromAcademicYear,
-                      promotion.fromStandard,
-                      promotion.fromSection,
+                      promotion.fromAcademicYear || String(promotion.fromAcademicYearId ?? ""),
+                      promotion.fromStandard || String(promotion.fromStandardId ?? ""),
+                      promotion.fromSection || String(promotion.fromClassSectionId ?? ""),
                     ]
                       .filter(Boolean)
                       .join(" / ")}
                   </td>
                   <td>
                     {[
-                      promotion.toAcademicYear,
-                      promotion.toStandard,
-                      promotion.toSection,
+                      promotion.toAcademicYear || String(promotion.toAcademicYearId ?? ""),
+                      promotion.toStandard || String(promotion.toStandardId ?? ""),
+                      promotion.toSection || String(promotion.toClassSectionId ?? ""),
                     ]
                       .filter(Boolean)
                       .join(" / ")}
@@ -1533,11 +1529,6 @@ function StudentForm({
   const [values, setValues] = useState<StudentFormState>(() =>
     getFormState(student),
   );
-
-  useEffect(() => {
-    setValues(getFormState(student));
-    setErrors({});
-  }, [student]);
 
   function updateField(field: keyof StudentFormState, value: string | boolean) {
     setValues((current) => ({ ...current, [field]: value }));

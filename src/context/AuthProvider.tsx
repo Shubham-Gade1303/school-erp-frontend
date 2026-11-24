@@ -1,23 +1,7 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { login as loginRequest } from "../API/authApi";
-import type { AuthUser, LoginRequest, UserRole } from "../types/api";
-
-interface AuthContextValue {
-  user: AuthUser | null;
-  isAuthenticated: boolean;
-  accessDeniedMessage: string | null;
-  login: (credentials: LoginRequest) => Promise<AuthUser>;
-  logout: () => void;
-  clearAccessDenied: () => void;
-}
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+import type { AuthUser, UserRole } from "../types/api";
+import { AuthContext } from "./AuthContext";
 
 function getStoredUser(): AuthUser | null {
   const username = localStorage.getItem("school_erp_username");
@@ -58,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  async function login(credentials: LoginRequest) {
+  async function login(credentials: Parameters<typeof loginRequest>[0]) {
     const { data } = await loginRequest(credentials);
     const authenticatedUser: AuthUser = {
       username: data.username,
@@ -100,14 +84,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error("useAuth must be used inside an AuthProvider");
-  }
-
-  return context;
 }

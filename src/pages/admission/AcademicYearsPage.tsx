@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CircleAlert, GraduationCap } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import {
   createAcademicYear,
   deleteAcademicYear,
@@ -29,7 +29,6 @@ export function AcademicYearsPage() {
 
   useEffect(() => {
     if (user?.role !== "ADMIN") {
-      setLoading(false);
       return;
     }
     let active = true;

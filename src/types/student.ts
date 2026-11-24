@@ -38,7 +38,9 @@ export interface StudentMarks {
   subjectId: number;
   subjectName: string;
   totalMarks: number;
+  maximumMarks?: number;
   marksObtained: number;
+  remarks?: string;
 }
 
 export interface StudentPerformanceSummary {
@@ -62,6 +64,9 @@ export interface StudentActivitiesParticipation {
   activityId: number;
   activityName: string;
   participationDate: string;
+  role?: string;
+  result?: string;
+  position?: string;
   remarks: string;
 }
 
@@ -84,11 +89,17 @@ export interface StudentPromotionHistory {
   studentName: string;
   promotionDate: string;
   fromAcademicYear: string;
+  fromAcademicYearId?: number;
   toAcademicYear: string;
+  toAcademicYearId?: number;
   fromStandard: string;
+  fromStandardId?: number;
   toStandard: string;
+  toStandardId?: number;
   fromSection: string;
+  fromClassSectionId?: number;
   toSection: string;
+  toClassSectionId?: number;
   status: string;
   remarks: string;
 }

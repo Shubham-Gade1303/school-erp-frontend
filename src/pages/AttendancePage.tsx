@@ -89,6 +89,8 @@ export function AttendancePage() {
 
   useEffect(() => {
     if (!selectedAcademicYearId || !selectedStandardId) {
+      // Resetting dependent filter data is intentional when its parent filter changes.
+      // oxlint-disable-next-line react/set-state-in-effect
       setSections([]);
       return;
     }
@@ -119,6 +121,8 @@ export function AttendancePage() {
     if (!hasLoadedStudents) return;
 
     let isCurrent = true;
+    // Attendance state is synchronized with the selected date and loaded students.
+    // oxlint-disable-next-line react/set-state-in-effect
     setIsAttendanceReady(false);
     setIsLoadingAttendance(true);
 

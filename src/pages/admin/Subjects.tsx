@@ -20,7 +20,7 @@ import {
   getSubjectById,
   updateSubject,
 } from "../../services/subjectService";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import type { SubjectRequest, SubjectResponse } from "../../types/subject";
 import "./Subjects.css";
 

@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Plus, RefreshCw, Search, UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import { createTeacher, deleteTeacher, getAllTeachers, updateTeacher } from "../../services/teacherService";
 import type { TeacherRequest, TeacherResponse } from "../../types/teacher";
 import { DeleteTeacherDialog } from "../../components/teachers/DeleteTeacherDialog";
@@ -39,6 +39,8 @@ export function TeachersPage() {
   }
 
   useEffect(() => {
+    // Loading the initial list is an external synchronization.
+    // oxlint-disable-next-line react/set-state-in-effect
     void loadTeachers();
   }, []);
 

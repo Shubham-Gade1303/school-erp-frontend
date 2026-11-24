@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import { useDashboardExams } from "../../hooks/useDashboardExams";
 import {
   useDashboard,
@@ -72,8 +72,12 @@ export function DashboardScreen() {
   }, [today, weekDates, weekRetry]);
 
   const todayMetrics = useMemo(
-    () => getAttendanceMetrics(dashboard.attendance.data ?? []),
-    [dashboard.attendance.data],
+    () =>
+      getAttendanceMetrics(
+        dashboard.attendance.data ?? [],
+        dashboard.students.data ?? 0,
+      ),
+    [dashboard.attendance.data, dashboard.students.data],
   );
   const exams = examRecords ?? EMPTY_EXAMS;
   const upcomingExams = useMemo(
@@ -89,7 +93,10 @@ export function DashboardScreen() {
   );
   const weekByDate = new Map(weekRecords.map((day) => [day.date, day]));
   const hasWeekError = weekRecords.some((day) => day.error);
-  const isAttendanceLoading = isWeekLoading || dashboard.attendance.isLoading;
+  const isAttendanceLoading =
+    isWeekLoading ||
+    dashboard.attendance.isLoading ||
+    dashboard.students.isLoading;
   const statCards = [
     {
       label: "Total Students",
@@ -209,6 +216,7 @@ export function DashboardScreen() {
                   recordsByDate={weekByDate}
                   today={today}
                   todayRecords={dashboard.attendance.data ?? []}
+                  totalStudents={dashboard.students.data ?? 0}
                 />
               </>
             )}
@@ -380,18 +388,22 @@ function AttendanceChart({
   recordsByDate,
   today,
   todayRecords,
+  totalStudents,
 }: {
   dates: string[];
   recordsByDate: Map<string, AttendanceDay>;
   today: string;
   todayRecords: AttendanceRecord[];
+  totalStudents: number;
 }) {
   const values = dates.map((date) => {
     const records =
       date === today ? todayRecords : (recordsByDate.get(date)?.records ?? []);
-    return { date, ...getAttendanceMetrics(records) };
+    return { date, ...getAttendanceMetrics(records, totalStudents) };
   });
-  const hasData = values.some((day) => day.marked > 0);
+  const hasData = values.some(
+    (day) => day.marked > 0 && day.percentage !== null,
+  );
 
   if (!hasData) {
     return (
@@ -415,7 +427,7 @@ function AttendanceChart({
         {values.map((day) => (
           <div className="dashboard-chart-day" key={day.date}>
             <div className="dashboard-chart-track">
-              {day.marked > 0 ? (
+              {day.marked > 0 && day.percentage !== null ? (
                 <>
                   <span
                     className="dashboard-chart-value"
@@ -426,7 +438,7 @@ function AttendanceChart({
                   <span
                     className="dashboard-chart-bar"
                     style={{ height: `${day.percentage}%` }}
-                    title={`${day.present} present of ${day.marked} marked`}
+                    title={`${day.present} present of ${totalStudents} students (${day.marked} marked)`}
                   />
                 </>
               ) : (
@@ -443,7 +455,7 @@ function AttendanceChart({
         ))}
       </div>
       <p className="dashboard-chart-caption">
-        Present ÷ (present + absent) for unique students with a marked record.
+        Present divided by total students. Unmarked students count as not present.
       </p>
     </div>
   );
@@ -788,7 +800,7 @@ function SectionError({
   );
 }
 
-function getAttendanceMetrics(records: AttendanceRecord[]) {
+function getAttendanceMetrics(records: AttendanceRecord[], totalStudents: number) {
   const uniqueRecords = new Map<number, string>();
   for (const record of records) {
     uniqueRecords.set(record.studentId, record.status.trim().toUpperCase());
@@ -804,7 +816,10 @@ function getAttendanceMetrics(records: AttendanceRecord[]) {
     present,
     absent,
     marked,
-    percentage: marked ? Math.round((present / marked) * 1000) / 10 : null,
+    percentage:
+      totalStudents > 0
+        ? Math.round((present / totalStudents) * 1000) / 10
+        : null,
   };
 }
 

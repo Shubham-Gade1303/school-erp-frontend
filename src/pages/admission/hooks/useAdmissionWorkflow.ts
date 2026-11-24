@@ -271,6 +271,8 @@ export function useAdmissionWorkflow() {
   );
 
   useEffect(() => {
+    // This effect synchronizes the selected filters with the remote sections list.
+    // oxlint-disable-next-line react/set-state-in-effect
     void loadSections(workflow.academicYearId, workflow.standardId);
   }, [loadSections, workflow.academicYearId, workflow.standardId]);
 

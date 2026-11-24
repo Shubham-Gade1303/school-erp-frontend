@@ -5,7 +5,7 @@ import { createExam, deleteExam, updateExam } from "../API/examApi";
 import { ExamFormModal } from "../components/exams/ExamFormModal";
 import { ExamScheduleTable } from "../components/exams/ExamScheduleTable";
 import { ExamStatsCards } from "../components/exams/ExamStatsCards";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { useExamData, useExamLookups } from "../hooks/useExams";
 import type {
   ExamRecord,

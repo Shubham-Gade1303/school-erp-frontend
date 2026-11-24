@@ -29,7 +29,6 @@ export function TeacherDashboardContent({
 
   useEffect(() => {
     let isCurrent = true;
-    setIsLoading(true);
     loadTeacherRecord(user.username)
       .then((record) => {
         if (isCurrent) setTeacher(record);

@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import { useDashboardExams } from "../../hooks/useDashboardExams";
 import type { ExamRecord } from "../../types/exam";
 import type { UserRole } from "../../types/api";
@@ -33,6 +33,7 @@ const navigationByRole: Record<UserRole, NavigationItem[]> = {
     ["Admission", "admission", UserPlus],
     ["Academic Years", "academic-years", CalendarDays],
     ["Students", "students", UsersRound],
+    ["Student Records", "student-records", ClipboardList],
     ["Teachers", "teachers", UsersRound],
     ["Subjects", "subjects", BookOpen],
     ["Attendance", "attendance", ClipboardList],
@@ -46,6 +47,7 @@ const navigationByRole: Record<UserRole, NavigationItem[]> = {
   PRINCIPAL: ([
     ["Dashboard", "dashboard", LayoutDashboard],
     ["Students", "students", UsersRound],
+    ["Student Records", "student-records", ClipboardList],
     ["Teachers", "teachers", UsersRound],
     ["Subjects", "subjects", BookOpen],
     ["Attendance", "attendance", ClipboardList],
@@ -58,6 +60,7 @@ const navigationByRole: Record<UserRole, NavigationItem[]> = {
     ["Dashboard", "dashboard", LayoutDashboard],
     ["My Classes", "classes", BookOpen],
     ["My Students", "students", UsersRound],
+    ["Student Records", "student-records", ClipboardList],
     ["Subjects", "subjects", BookOpen],
     ["Attendance", "attendance", CalendarDays],
     ["Assignments", "assignments", ClipboardList],

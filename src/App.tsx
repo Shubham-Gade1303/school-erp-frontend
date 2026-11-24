@@ -23,7 +23,7 @@ import { TeacherDashboardContent } from "./components/teacher/TeacherDashboardCo
 import { TeacherFeaturePlaceholder } from "./components/teacher/TeacherFeaturePlaceholder";
 import { DashboardScreen as LiveDashboardScreen } from "./components/dashboard/DashboardScreen";
 import { AppLayout } from "./components/layout/AppLayout";
-import { useAuth } from "./context/AuthContext";
+import { useAuth } from "./context/useAuth";
 import { DashboardExamsProvider } from "./context/DashboardExamsProvider";
 import { TeachersPage } from "./pages/admin/Teachers";
 import { StudentsPage } from "./pages/admin/Students";
@@ -32,6 +32,7 @@ import { AdmissionPage } from "./pages/admission/AdmissionPage";
 import { AcademicYearsPage } from "./pages/admission/AcademicYearsPage";
 import { AttendancePage } from "./pages/AttendancePage";
 import { ExamsPage } from "./pages/ExamsPage";
+import { StudentRecordsManagementPage } from "./pages/student-records/StudentRecordsManagementPage";
 import type { UserRole } from "./types/api";
 import type { DashboardCounts } from "./services/dashboardService";
 import { getAttendanceByDate } from "./services/attendanceService";
@@ -72,6 +73,7 @@ function App() {
             <Route path="admission" element={<AdmissionPage />} />
             <Route path="academic-years" element={<AcademicYearsPage />} />
             <Route path="students" element={<StudentsPage />} />
+            <Route path="student-records" element={<StudentRecordsManagementPage />} />
             <Route path="teachers" element={<TeachersPage />} />
             <Route path="subjects" element={<SubjectsPage />} />
             <Route path="attendance" element={<AttendancePage />} />
@@ -88,6 +90,7 @@ function App() {
           <Route element={<AppLayout />}>
             <Route path="dashboard" element={<DashboardRoute />} />
             <Route path="students" element={<StudentsPage />} />
+            <Route path="student-records" element={<StudentRecordsManagementPage />} />
             <Route path="teachers" element={<FeaturePage title="Teachers" />} />
             <Route path="subjects" element={<SubjectsPage />} />
             <Route path="attendance" element={<AttendancePage />} />
@@ -106,6 +109,7 @@ function App() {
               element={<TeacherFeatureRoute title="My Classes" />}
             />
             <Route path="students" element={<StudentsPage />} />
+            <Route path="student-records" element={<StudentRecordsManagementPage />} />
             <Route path="attendance" element={<AttendancePage />} />
             <Route
               path="assignments"
@@ -246,6 +250,8 @@ function LegacyDashboardScreen() {
     let isCurrent = true;
     const date = getLocalDateString();
 
+    // Attendance is loaded from the API whenever the active role changes.
+    // oxlint-disable-next-line react/set-state-in-effect
     setAttendanceOverview({ status: "loading" });
     Promise.allSettled([getAttendanceByDate(date), getAllStudents()]).then(
       ([attendanceResult, studentsResult]) => {
