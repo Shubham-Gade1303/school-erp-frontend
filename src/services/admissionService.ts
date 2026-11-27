@@ -99,12 +99,16 @@ export const getStudentFees = (studentId: number, academicYearId: number) =>
   axiosClient.get<StudentFee[]>(
     `/student-fees/student/${studentId}/academic-year/${academicYearId}`,
   );
+export const getAllStudentFees = () =>
+  axiosClient.get<StudentFee[]>("/student-fees");
 export const createStudentFee = (data: StudentFee) =>
   axiosClient.post<StudentFee>("/student-fees", data);
 export const updateStudentFee = (id: number, data: StudentFee) =>
   axiosClient.put<StudentFee>(`/student-fees/${id}`, data);
 export const getFeePayments = (studentFeeId: number) =>
   axiosClient.get<FeePayment[]>(`/fee-payments/student-fee/${studentFeeId}`);
+export const getAllFeePayments = () =>
+  axiosClient.get<FeePayment[]>("/fee-payments");
 export const createFeePayment = (data: FeePayment) =>
   axiosClient.post<FeePayment>("/fee-payments", data);
 export const updateFeePayment = (id: number, data: FeePayment) =>

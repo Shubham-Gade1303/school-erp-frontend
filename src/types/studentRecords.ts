@@ -18,6 +18,7 @@ export interface StudentMarksRecord {
   examName?: string;
   subjectId: number;
   subjectName?: string;
+  subjectCode?: string;
   marksObtained: number;
   maximumMarks?: number;
   totalMarks?: number;

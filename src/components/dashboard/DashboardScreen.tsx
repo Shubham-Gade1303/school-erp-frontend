@@ -17,6 +17,7 @@ import {
 } from "../../hooks/useDashboard";
 import type { AttendanceRecord } from "../../types/attendance";
 import type { ExamRecord } from "../../types/exam";
+import type { StudentResponse } from "../../types/student";
 import { getAttendanceByDate } from "../../services/attendanceService";
 import type { FeeCollection } from "../../types/dashboard";
 
@@ -24,6 +25,17 @@ type AttendanceDay = {
   date: string;
   records: AttendanceRecord[];
   error: string | null;
+};
+
+type Absentee = {
+  id: number;
+  name: string;
+  admissionNumber: string;
+};
+
+type AbsenteeGroup = {
+  className: string;
+  students: Absentee[];
 };
 
 const EMPTY_EXAMS: ExamRecord[] = [];
@@ -71,13 +83,10 @@ export function DashboardScreen() {
     };
   }, [today, weekDates, weekRetry]);
 
+  const totalStudents = dashboard.students.data?.length ?? 0;
   const todayMetrics = useMemo(
-    () =>
-      getAttendanceMetrics(
-        dashboard.attendance.data ?? [],
-        dashboard.students.data ?? 0,
-      ),
-    [dashboard.attendance.data, dashboard.students.data],
+    () => getAttendanceMetrics(dashboard.attendance.data ?? [], totalStudents),
+    [dashboard.attendance.data, totalStudents],
   );
   const exams = examRecords ?? EMPTY_EXAMS;
   const upcomingExams = useMemo(
@@ -145,6 +154,11 @@ export function DashboardScreen() {
     setIsWeekLoading(true);
     setWeekRetry((retry) => retry + 1);
     void dashboard.refetchAttendance();
+  }
+
+  function retryAbsentees() {
+    retryAttendance();
+    void dashboard.refetchStudents();
   }
 
   return (
@@ -216,15 +230,16 @@ export function DashboardScreen() {
                   recordsByDate={weekByDate}
                   today={today}
                   todayRecords={dashboard.attendance.data ?? []}
-                  totalStudents={dashboard.students.data ?? 0}
+                  totalStudents={totalStudents}
                 />
               </>
             )}
           </section>
 
-          <UnavailablePanel
-            title="Today's Schedule"
-            description="Timetable data is not available."
+          <TodayAbsenteesPanel
+            attendance={dashboard.attendance}
+            students={dashboard.students}
+            onRetry={retryAbsentees}
           />
 
           <UnavailablePanel
@@ -458,6 +473,88 @@ function AttendanceChart({
         Present divided by total students. Unmarked students count as not present.
       </p>
     </div>
+  );
+}
+
+function TodayAbsenteesPanel({
+  attendance,
+  students,
+  onRetry,
+}: {
+  attendance: DashboardSectionState<AttendanceRecord[]>;
+  students: DashboardSectionState<StudentResponse[]>;
+  onRetry: () => void;
+}) {
+  const groups = useMemo(
+    () => getAbsentStudentsByClass(attendance.data ?? [], students.data ?? []),
+    [attendance.data, students.data],
+  );
+  const isLoading =
+    (attendance.isLoading && !attendance.data) ||
+    (students.isLoading && !students.data);
+  const error =
+    attendance.data === null
+      ? attendance.error
+      : students.data === null
+        ? students.error
+        : null;
+
+  return (
+    <section className="panel dashboard-redesign-panel dashboard-absentee-panel">
+      <PanelHeader
+        title="Today's Absentees"
+        action={
+          <span className="dashboard-date-pill">
+            <CalendarDays size={13} />
+            Today
+          </span>
+        }
+      />
+      {isLoading ? (
+        <SectionSkeleton />
+      ) : error ? (
+        <SectionError message={error} onRetry={onRetry} />
+      ) : !groups.length ? (
+        <p className="dashboard-redesign-empty">
+          No students are marked absent today.
+        </p>
+      ) : (
+        <div className="dashboard-absentee-list">
+          {groups.map((group) => (
+            <section className="dashboard-absentee-group" key={group.className}>
+              <div className="dashboard-absentee-group-header">
+                <strong>{group.className}</strong>
+                <span>
+                  {group.students.length}{" "}
+                  {group.students.length === 1 ? "student" : "students"}
+                </span>
+              </div>
+              <ul className="dashboard-absentee-students">
+                {group.students.map((student) => (
+                  <li
+                    className="dashboard-absentee-student"
+                    key={student.id}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="dashboard-absentee-avatar"
+                    >
+                      {getInitials(student.name)}
+                    </span>
+                    <span className="dashboard-absentee-student-copy">
+                      <strong>{student.name}</strong>
+                      {student.admissionNumber && (
+                        <small>{student.admissionNumber}</small>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -800,10 +897,80 @@ function SectionError({
   );
 }
 
+function getAbsentStudentsByClass(
+  records: AttendanceRecord[],
+  students: StudentResponse[],
+): AbsenteeGroup[] {
+  const studentsById = new Map(students.map((student) => [student.id, student]));
+  const latestRecordByStudent = new Map<number, AttendanceRecord>();
+
+  for (const record of records) {
+    latestRecordByStudent.set(record.studentId, record);
+  }
+
+  const groups = new Map<string, Absentee[]>();
+  for (const record of latestRecordByStudent.values()) {
+    if (normalizeAttendanceStatus(record.status) !== "ABSENT") continue;
+
+    const student = studentsById.get(record.studentId);
+    const name =
+      (student ? getStudentFullName(student) : record.studentName)?.trim() ||
+      record.admissionNumber ||
+      "Student " + record.studentId;
+    const className = student
+      ? getStudentClassName(student)
+      : "Class unavailable";
+    const group = groups.get(className) ?? [];
+
+    group.push({
+      id: record.studentId,
+      name,
+      admissionNumber: student?.admissionNumber ?? record.admissionNumber,
+    });
+    groups.set(className, group);
+  }
+
+  return Array.from(groups, ([className, groupedStudents]) => ({
+    className,
+    students: groupedStudents.sort((first, second) =>
+      first.name.localeCompare(second.name),
+    ),
+  })).sort((first, second) => first.className.localeCompare(second.className));
+}
+
+function getStudentFullName(student: StudentResponse) {
+  return [student.firstName, student.middleName, student.lastName]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function getStudentClassName(student: StudentResponse) {
+  const standardName = student.standardName?.trim();
+  const sectionName = student.sectionName?.trim();
+  if (standardName && sectionName) return standardName + " - " + sectionName;
+  return standardName || sectionName || "Class " + student.classSectionId;
+}
+
+function getInitials(name: string) {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase() || "?"
+  );
+}
+
+function normalizeAttendanceStatus(status: string) {
+  return status.trim().toUpperCase();
+}
+
 function getAttendanceMetrics(records: AttendanceRecord[], totalStudents: number) {
   const uniqueRecords = new Map<number, string>();
   for (const record of records) {
-    uniqueRecords.set(record.studentId, record.status.trim().toUpperCase());
+    uniqueRecords.set(record.studentId, normalizeAttendanceStatus(record.status));
   }
   let present = 0;
   let absent = 0;
@@ -823,8 +990,14 @@ function getAttendanceMetrics(records: AttendanceRecord[], totalStudents: number
   };
 }
 
-function getMetricValue(state: DashboardSectionState<number>) {
-  if (state.data !== null) return state.data;
+function getMetricValue(
+  state:
+    | DashboardSectionState<number>
+    | DashboardSectionState<StudentResponse[]>,
+) {
+  if (state.data !== null) {
+    return typeof state.data === "number" ? state.data : state.data.length;
+  }
   return state.isLoading ? "…" : "N/A";
 }
 

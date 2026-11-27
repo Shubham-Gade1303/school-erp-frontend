@@ -5400,3 +5400,91 @@
     padding: 6px 12px;
   }
 }
+
+.dashboard-absentee-list {
+  height: calc(100% - 49px);
+  overflow-y: auto;
+  padding: 4px 14px 8px;
+}
+
+.dashboard-absentee-group {
+  padding: 7px 0;
+}
+
+.dashboard-absentee-group + .dashboard-absentee-group {
+  border-top: 1px solid #f0f2f6;
+}
+
+.dashboard-absentee-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dashboard-absentee-group-header strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #29354a;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-absentee-group-header span {
+  flex: 0 0 auto;
+  color: #7b8595;
+  font-size: 9px;
+}
+
+.dashboard-absentee-students {
+  display: grid;
+  gap: 4px;
+  margin: 5px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard-absentee-student {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.dashboard-absentee-avatar {
+  display: grid;
+  flex: 0 0 22px;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  color: #b8465a;
+  background: #fff0f2;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.dashboard-absentee-student-copy {
+  display: grid;
+  min-width: 0;
+}
+
+.dashboard-absentee-student-copy strong,
+.dashboard-absentee-student-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-absentee-student-copy strong {
+  color: #3a465b;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.dashboard-absentee-student-copy small {
+  margin-top: 1px;
+  color: #8a94a4;
+  font-size: 8px;
+}

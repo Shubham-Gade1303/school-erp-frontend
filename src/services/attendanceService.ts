@@ -2,7 +2,9 @@ import axiosClient from "../API/axiosClient";
 import type { AttendanceRecord, AttendanceRequest } from "../types/attendance";
 
 export function getAttendanceByDate(attendanceDate: string) {
-  return axiosClient.get<AttendanceRecord[]>(`/attendance/date/${attendanceDate}`);
+  return axiosClient.get<AttendanceRecord[]>(
+    `/attendance/date/${attendanceDate}`,
+  );
 }
 
 export function createAttendance(request: AttendanceRequest) {

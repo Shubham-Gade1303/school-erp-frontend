@@ -409,7 +409,9 @@
 }
 
 @keyframes subjects-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .subjects-notice {

@@ -690,10 +690,14 @@ export function StudentsPage() {
               value={academicYearId ?? ""}
             >
               <option value="">
-                {isLoadingAcademicYears ? "Loading academic years..." : "Select academic year"}
+                {isLoadingAcademicYears
+                  ? "Loading academic years..."
+                  : "Select academic year"}
               </option>
               {academicYears.map((year) => (
-                <option key={year.id} value={year.id}>{year.academicYear}</option>
+                <option key={year.id} value={year.id}>
+                  {year.academicYear}
+                </option>
               ))}
             </select>
           </label>
@@ -728,16 +732,28 @@ export function StudentsPage() {
         <div className="student-directory-filter-row">
           <span className="student-directory-filter-label">Standard</span>
           {isLoadingStandards ? (
-            <span className="student-directory-filter-state">Loading standards...</span>
+            <span className="student-directory-filter-state">
+              Loading standards...
+            </span>
           ) : standards.length === 0 ? (
-            <span className="student-directory-filter-state">No standards available.</span>
+            <span className="student-directory-filter-state">
+              No standards available.
+            </span>
           ) : (
             <div className="student-directory-pills" aria-label="Standards">
               {standards.map((standard) => (
                 <button
                   key={standard.id}
-                  className={selectedStandardId === standard.id ? "student-directory-pill active" : "student-directory-pill"}
-                  disabled={academicYearId === null || isLoadingAcademicYears || Boolean(academicYearsError)}
+                  className={
+                    selectedStandardId === standard.id
+                      ? "student-directory-pill active"
+                      : "student-directory-pill"
+                  }
+                  disabled={
+                    academicYearId === null ||
+                    isLoadingAcademicYears ||
+                    Boolean(academicYearsError)
+                  }
                   onClick={() => handleStandardSelect(standard)}
                   type="button"
                 >
@@ -751,27 +767,40 @@ export function StudentsPage() {
         <div className="student-directory-filter-row">
           <span className="student-directory-filter-label">Section</span>
           {selectedStandardId === null ? (
-            <span className="student-directory-filter-state">Select a standard first.</span>
+            <span className="student-directory-filter-state">
+              Select a standard first.
+            </span>
           ) : sectionsError ? (
             <DirectoryError
               isRetryDisabled={isLoadingSections}
               message={sectionsError}
               onRetry={() => {
                 if (academicYearId !== null && selectedStandardId !== null) {
-                  void loadSectionsForStandard(academicYearId, selectedStandardId);
+                  void loadSectionsForStandard(
+                    academicYearId,
+                    selectedStandardId,
+                  );
                 }
               }}
             />
           ) : isLoadingSections ? (
-            <span className="student-directory-filter-state">Loading sections...</span>
+            <span className="student-directory-filter-state">
+              Loading sections...
+            </span>
           ) : sections.length === 0 ? (
-            <span className="student-directory-filter-state">No sections available.</span>
+            <span className="student-directory-filter-state">
+              No sections available.
+            </span>
           ) : (
             <div className="student-directory-pills" aria-label="Sections">
               {sections.map((section) => (
                 <button
                   key={section.id}
-                  className={selectedClassSectionId === section.id ? "student-directory-pill active" : "student-directory-pill"}
+                  className={
+                    selectedClassSectionId === section.id
+                      ? "student-directory-pill active"
+                      : "student-directory-pill"
+                  }
                   onClick={() => handleSectionSelect(section)}
                   type="button"
                 >
@@ -786,7 +815,11 @@ export function StudentsPage() {
       <section className="panel student-directory-table-card">
         <div className="student-directory-table-heading">
           <h2>
-            {selectedSectionTitle(selectedStandard?.standardName, sections.find((section) => section.id === selectedClassSectionId)?.sectionName)}
+            {selectedSectionTitle(
+              selectedStandard?.standardName,
+              sections.find((section) => section.id === selectedClassSectionId)
+                ?.sectionName,
+            )}
           </h2>
           <div className="student-directory-table-tools">
             <label className="search-box student-directory-search">
@@ -800,7 +833,9 @@ export function StudentsPage() {
                 value={search}
               />
             </label>
-            <span className="student-directory-result-count">{filteredStudents.length} results</span>
+            <span className="student-directory-result-count">
+              {filteredStudents.length} results
+            </span>
           </div>
         </div>
         {studentsError ? (
@@ -808,7 +843,8 @@ export function StudentsPage() {
             isRetryDisabled={isLoadingStudents}
             message={studentsError}
             onRetry={() => {
-              if (selectedClassSectionId !== null) void loadStudentsForSection(selectedClassSectionId);
+              if (selectedClassSectionId !== null)
+                void loadStudentsForSection(selectedClassSectionId);
             }}
           />
         ) : selectedClassSectionId === null ? (
@@ -831,7 +867,9 @@ export function StudentsPage() {
           <p className="student-directory-table-empty">Loading students...</p>
         ) : filteredStudents.length === 0 ? (
           <p className="student-directory-table-empty">
-            {students.length === 0 ? "No students found for this section." : "No students match your search."}
+            {students.length === 0
+              ? "No students found for this section."
+              : "No students match your search."}
           </p>
         ) : (
           <>
@@ -846,10 +884,26 @@ export function StudentsPage() {
             />
             {filteredStudents.length > PAGE_SIZE && (
               <div className="student-pagination">
-                <span>Page {currentPage} of {totalPages}</span>
+                <span>
+                  Page {currentPage} of {totalPages}
+                </span>
                 <div>
-                  <button className="secondary-button" disabled={currentPage === 1} onClick={() => setPage((current) => current - 1)} type="button">Previous</button>
-                  <button className="secondary-button" disabled={currentPage === totalPages} onClick={() => setPage((current) => current + 1)} type="button">Next</button>
+                  <button
+                    className="secondary-button"
+                    disabled={currentPage === 1}
+                    onClick={() => setPage((current) => current - 1)}
+                    type="button"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    className="secondary-button"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setPage((current) => current + 1)}
+                    type="button"
+                  >
+                    Next
+                  </button>
                 </div>
               </div>
             )}
@@ -1183,7 +1237,9 @@ function StudentProfileModal({
             onRetry={() => onRetry("marks")}
             title="Marks"
           >
-            <ProfileTable headers={["Exam", "Subject", "Maximum", "Obtained", "Remarks"]}>
+            <ProfileTable
+              headers={["Exam", "Subject", "Maximum", "Obtained", "Remarks"]}
+            >
               {data.marks.map((mark) => (
                 <tr key={mark.id}>
                   <td>{mark.examName}</td>
@@ -1227,7 +1283,14 @@ function StudentProfileModal({
             title="Activities"
           >
             <ProfileTable
-              headers={["Activity", "Participation Date", "Role", "Result", "Position", "Remarks"]}
+              headers={[
+                "Activity",
+                "Participation Date",
+                "Role",
+                "Result",
+                "Position",
+                "Remarks",
+              ]}
             >
               {data.activities.map((activity) => (
                 <tr key={activity.id}>
@@ -1302,18 +1365,24 @@ function StudentProfileModal({
                 <tr key={promotion.id}>
                   <td>
                     {[
-                      promotion.fromAcademicYear || String(promotion.fromAcademicYearId ?? ""),
-                      promotion.fromStandard || String(promotion.fromStandardId ?? ""),
-                      promotion.fromSection || String(promotion.fromClassSectionId ?? ""),
+                      promotion.fromAcademicYear ||
+                        String(promotion.fromAcademicYearId ?? ""),
+                      promotion.fromStandard ||
+                        String(promotion.fromStandardId ?? ""),
+                      promotion.fromSection ||
+                        String(promotion.fromClassSectionId ?? ""),
                     ]
                       .filter(Boolean)
                       .join(" / ")}
                   </td>
                   <td>
                     {[
-                      promotion.toAcademicYear || String(promotion.toAcademicYearId ?? ""),
-                      promotion.toStandard || String(promotion.toStandardId ?? ""),
-                      promotion.toSection || String(promotion.toClassSectionId ?? ""),
+                      promotion.toAcademicYear ||
+                        String(promotion.toAcademicYearId ?? ""),
+                      promotion.toStandard ||
+                        String(promotion.toStandardId ?? ""),
+                      promotion.toSection ||
+                        String(promotion.toClassSectionId ?? ""),
                     ]
                       .filter(Boolean)
                       .join(" / ")}
@@ -1739,7 +1808,10 @@ function getStudentName(student: Student) {
     .join(" ");
 }
 
-function selectedSectionTitle(standardName: string | undefined, sectionName: string | undefined) {
+function selectedSectionTitle(
+  standardName: string | undefined,
+  sectionName: string | undefined,
+) {
   if (!standardName || !sectionName) return "Student List";
   return `${standardName} Standard - Section ${sectionName}`;
 }

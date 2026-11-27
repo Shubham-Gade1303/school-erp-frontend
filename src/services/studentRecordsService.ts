@@ -1,5 +1,9 @@
 import axiosClient from "../API/axiosClient";
-import { getClassSections, getAcademicYears, getStandards } from "./admissionService";
+import {
+  getClassSections,
+  getAcademicYears,
+  getStandards,
+} from "./admissionService";
 import { getExams } from "../API/examApi";
 import { getAllSubjects } from "./subjectService";
 import type {
@@ -42,7 +46,10 @@ export function createStudentMarks(request: StudentMarksRequest) {
 }
 
 export function updateStudentMarks(id: number, request: StudentMarksRequest) {
-  return axiosClient.put<StudentMarksRecord>(`${resourcePaths.marks}/${id}`, request);
+  return axiosClient.put<StudentMarksRecord>(
+    `${resourcePaths.marks}/${id}`,
+    request,
+  );
 }
 
 export function deleteStudentMarks(id: number) {
@@ -50,11 +57,20 @@ export function deleteStudentMarks(id: number) {
 }
 
 export function createStudentPerformance(request: StudentPerformanceRequest) {
-  return axiosClient.post<StudentPerformanceRecord>(resourcePaths.performance, request);
+  return axiosClient.post<StudentPerformanceRecord>(
+    resourcePaths.performance,
+    request,
+  );
 }
 
-export function updateStudentPerformance(id: number, request: StudentPerformanceRequest) {
-  return axiosClient.put<StudentPerformanceRecord>(`${resourcePaths.performance}/${id}`, request);
+export function updateStudentPerformance(
+  id: number,
+  request: StudentPerformanceRequest,
+) {
+  return axiosClient.put<StudentPerformanceRecord>(
+    `${resourcePaths.performance}/${id}`,
+    request,
+  );
 }
 
 export function deleteStudentPerformance(id: number) {
@@ -62,11 +78,20 @@ export function deleteStudentPerformance(id: number) {
 }
 
 export function createStudentActivity(request: StudentActivityRequest) {
-  return axiosClient.post<StudentActivityRecord>(resourcePaths.activities, request);
+  return axiosClient.post<StudentActivityRecord>(
+    resourcePaths.activities,
+    request,
+  );
 }
 
-export function updateStudentActivity(id: number, request: StudentActivityRequest) {
-  return axiosClient.put<StudentActivityRecord>(`${resourcePaths.activities}/${id}`, request);
+export function updateStudentActivity(
+  id: number,
+  request: StudentActivityRequest,
+) {
+  return axiosClient.put<StudentActivityRecord>(
+    `${resourcePaths.activities}/${id}`,
+    request,
+  );
 }
 
 export function deleteStudentActivity(id: number) {
@@ -74,11 +99,20 @@ export function deleteStudentActivity(id: number) {
 }
 
 export function createStudentDiscipline(request: StudentDisciplineRequest) {
-  return axiosClient.post<StudentDisciplineRecord>(resourcePaths.discipline, request);
+  return axiosClient.post<StudentDisciplineRecord>(
+    resourcePaths.discipline,
+    request,
+  );
 }
 
-export function updateStudentDiscipline(id: number, request: StudentDisciplineRequest) {
-  return axiosClient.put<StudentDisciplineRecord>(`${resourcePaths.discipline}/${id}`, request);
+export function updateStudentDiscipline(
+  id: number,
+  request: StudentDisciplineRequest,
+) {
+  return axiosClient.put<StudentDisciplineRecord>(
+    `${resourcePaths.discipline}/${id}`,
+    request,
+  );
 }
 
 export function deleteStudentDiscipline(id: number) {
@@ -86,11 +120,20 @@ export function deleteStudentDiscipline(id: number) {
 }
 
 export function createStudentPromotion(request: StudentPromotionRequest) {
-  return axiosClient.post<StudentPromotionRecord>(resourcePaths.promotion, request);
+  return axiosClient.post<StudentPromotionRecord>(
+    resourcePaths.promotion,
+    request,
+  );
 }
 
-export function updateStudentPromotion(id: number, request: StudentPromotionRequest) {
-  return axiosClient.put<StudentPromotionRecord>(`${resourcePaths.promotion}/${id}`, request);
+export function updateStudentPromotion(
+  id: number,
+  request: StudentPromotionRequest,
+) {
+  return axiosClient.put<StudentPromotionRecord>(
+    `${resourcePaths.promotion}/${id}`,
+    request,
+  );
 }
 
 export function deleteStudentPromotion(id: number) {
@@ -101,24 +144,39 @@ export function getActivityOptions() {
   return axiosClient.get<ActivityOption[]>("/activities");
 }
 
+export function getStudentMarksByExam(examId: number) {
+  return axiosClient.get<StudentMarksRecord[]>(`/student-marks/exam/${examId}`);
+}
+
+export function getStudentPerformanceByExam(examId: number) {
+  return axiosClient.get<StudentPerformanceRecord[]>(
+    `/student-performance/exam/${examId}`,
+  );
+}
+
 export async function getStudentRecordOptions() {
-  const [exams, subjects, activities, academicYears, standards] = await Promise.allSettled([
-    getExams(),
-    getAllSubjects(),
-    getActivityOptions(),
-    getAcademicYears(),
-    getStandards(),
-  ]);
+  const [exams, subjects, activities, academicYears, standards] =
+    await Promise.allSettled([
+      getExams(),
+      getAllSubjects(),
+      getActivityOptions(),
+      getAcademicYears(),
+      getStandards(),
+    ]);
 
   return {
     exams: exams.status === "fulfilled" ? exams.value.data : [],
     subjects: subjects.status === "fulfilled" ? subjects.value.data : [],
     activities: activities.status === "fulfilled" ? activities.value.data : [],
-    academicYears: academicYears.status === "fulfilled" ? academicYears.value.data : [],
+    academicYears:
+      academicYears.status === "fulfilled" ? academicYears.value.data : [],
     standards: standards.status === "fulfilled" ? standards.value.data : [],
   };
 }
 
-export function getRecordClassSections(academicYearId: number, standardId: number) {
+export function getRecordClassSections(
+  academicYearId: number,
+  standardId: number,
+) {
   return getClassSections(academicYearId, standardId);
 }

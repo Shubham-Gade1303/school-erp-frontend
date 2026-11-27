@@ -10,6 +10,7 @@ import { getAllStudents } from "../services/studentService";
 import { getAllTeachers } from "../services/teacherService";
 import type { AttendanceRecord } from "../types/attendance";
 import type { FeeCollection } from "../types/dashboard";
+import type { StudentResponse } from "../types/student";
 
 export interface DashboardSectionState<T> {
   data: T | null;
@@ -30,38 +31,35 @@ function useSection<T>(initialData: T | null = null) {
   });
   const pendingRequest = useRef<Promise<void> | null>(null);
 
-  const load = useCallback(
-    (request: () => Promise<T>, showLoading = true) => {
-      if (pendingRequest.current) return pendingRequest.current;
-      setState((current) => ({
-        ...current,
-        isLoading: showLoading,
-        error: null,
-      }));
-      pendingRequest.current = (async () => {
-        try {
-          const data = await request();
-          setState({ data, isLoading: false, error: null });
-        } catch (error) {
-          setState((current) => ({
-            ...current,
-            isLoading: false,
-            error: getErrorMessage(error),
-          }));
-        } finally {
-          pendingRequest.current = null;
-        }
-      })();
-      return pendingRequest.current;
-    },
-    [],
-  );
+  const load = useCallback((request: () => Promise<T>, showLoading = true) => {
+    if (pendingRequest.current) return pendingRequest.current;
+    setState((current) => ({
+      ...current,
+      isLoading: showLoading,
+      error: null,
+    }));
+    pendingRequest.current = (async () => {
+      try {
+        const data = await request();
+        setState({ data, isLoading: false, error: null });
+      } catch (error) {
+        setState((current) => ({
+          ...current,
+          isLoading: false,
+          error: getErrorMessage(error),
+        }));
+      } finally {
+        pendingRequest.current = null;
+      }
+    })();
+    return pendingRequest.current;
+  }, []);
 
   return [state, load] as const;
 }
 
 export function useDashboard() {
-  const [students, loadStudents] = useSection<number>();
+  const [students, loadStudents] = useSection<StudentResponse[]>();
   const [teachers, loadTeachers] = useSection<number>();
   const [classes, loadClasses] = useSection<number>();
   const [attendance, loadAttendance] = useSection<AttendanceRecord[]>();
@@ -70,12 +68,18 @@ export function useDashboard() {
 
   const refetchStudents = useCallback(
     (showLoading = true) =>
-      loadStudents(async () => (await getAllStudents()).data.length, showLoading),
+      loadStudents(
+        async () => (await getAllStudents()).data,
+        showLoading,
+      ),
     [loadStudents],
   );
   const refetchTeachers = useCallback(
     (showLoading = true) =>
-      loadTeachers(async () => (await getAllTeachers()).data.length, showLoading),
+      loadTeachers(
+        async () => (await getAllTeachers()).data.length,
+        showLoading,
+      ),
     [loadTeachers],
   );
   const refetchClasses = useCallback(
@@ -111,13 +115,10 @@ export function useDashboard() {
   );
   const refetchAcademicYear = useCallback(
     (showLoading = true) =>
-      loadAcademicYear(
-        async () => {
-          const response = await getActiveAcademicYear();
-          return response.data.academicYear;
-        },
-        showLoading,
-      ),
+      loadAcademicYear(async () => {
+        const response = await getActiveAcademicYear();
+        return response.data.academicYear;
+      }, showLoading),
     [loadAcademicYear],
   );
   const refetchFeeCollection = useCallback(
@@ -148,14 +149,17 @@ export function useDashboard() {
   ]);
 
   useEffect(() => {
-    const interval = window.setInterval(() => {
-      void Promise.all([
-        refetchStudents(false),
-        refetchTeachers(false),
-        refetchClasses(false),
-        refetchAttendance(false),
-      ]);
-    }, 5 * 60 * 1000);
+    const interval = window.setInterval(
+      () => {
+        void Promise.all([
+          refetchStudents(false),
+          refetchTeachers(false),
+          refetchClasses(false),
+          refetchAttendance(false),
+        ]);
+      },
+      5 * 60 * 1000,
+    );
     return () => window.clearInterval(interval);
   }, [refetchAttendance, refetchClasses, refetchStudents, refetchTeachers]);
 

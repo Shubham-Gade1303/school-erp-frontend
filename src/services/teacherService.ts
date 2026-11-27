@@ -26,7 +26,10 @@ export function updateTeacher(id: number, request: TeacherRequest) {
         Object.entries(request).filter(([key]) => key !== "password"),
       );
 
-  return axiosClient.put<TeacherResponse>(`${teachersPath}/${id}`, updateRequest);
+  return axiosClient.put<TeacherResponse>(
+    `${teachersPath}/${id}`,
+    updateRequest,
+  );
 }
 
 export function deleteTeacher(id: number) {

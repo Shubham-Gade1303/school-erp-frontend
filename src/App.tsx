@@ -33,6 +33,7 @@ import { AcademicYearsPage } from "./pages/admission/AcademicYearsPage";
 import { AttendancePage } from "./pages/AttendancePage";
 import { ExamsPage } from "./pages/ExamsPage";
 import { StudentRecordsManagementPage } from "./pages/student-records/StudentRecordsManagementPage";
+import { ExaminationResultsPage } from "./pages/results/ExaminationResultsPage";
 import type { UserRole } from "./types/api";
 import type { DashboardCounts } from "./services/dashboardService";
 import { getAttendanceByDate } from "./services/attendanceService";
@@ -78,7 +79,7 @@ function App() {
             <Route path="subjects" element={<SubjectsPage />} />
             <Route path="attendance" element={<AttendancePage />} />
             <Route path="exams" element={<ExamsPage />} />
-            <Route path="results" element={<FeaturePage title="Results" />} />
+            <Route path="results" element={<ExaminationResultsPage />} />
             <Route path="fees" element={<FeaturePage title="Fees" />} />
             <Route path="users" element={<FeaturePage title="Users" />} />
             <Route path="roles" element={<FeaturePage title="Roles" />} />
@@ -95,7 +96,7 @@ function App() {
             <Route path="subjects" element={<SubjectsPage />} />
             <Route path="attendance" element={<AttendancePage />} />
             <Route path="exams" element={<ExamsPage />} />
-            <Route path="results" element={<FeaturePage title="Results" />} />
+            <Route path="results" element={<ExaminationResultsPage />} />
             <Route path="reports" element={<FeaturePage title="Reports" />} />
             <Route path="settings" element={<FeaturePage title="Settings" />} />
           </Route>
@@ -119,10 +120,7 @@ function App() {
               path="exams"
               element={<ExamsPage />}
             />
-            <Route
-              path="results"
-              element={<TeacherFeatureRoute title="Results" />}
-            />
+            <Route path="results" element={<ExaminationResultsPage />} />
             <Route
               path="calendar"
               element={<TeacherFeatureRoute title="Calendar" />}

@@ -7,6 +7,14 @@ import type {
 
 export const getExams = () => axiosClient.get<ExamRecord[]>("/exams");
 
+export const getExamsByAcademicYearAndStandard = (
+  academicYearId: number,
+  standardId: number,
+) =>
+  axiosClient.get<ExamRecord[]>(
+    `/exams/academic-year/${academicYearId}/standard/${standardId}`,
+  );
+
 export const createExam = (data: ExamRequest) =>
   axiosClient.post<ExamRecord>("/exams", data);
 
